@@ -118,6 +118,10 @@ Les tests locaux doivent rester indépendants de Cloudflare et de la base distan
 
 Les tests réels rapportés couvrent déjà health, inscription, session, création/liste d'alias, validations, logout, persistance, origine refusée et limitation. Ils ne prouvent pas encore que toute cette matrice de non-régression est automatisée ni que tous les cas limites ont été testés sur le Worker.
 
+## Revue sécurité du prototype de test
+
+La revue source-level est consignée dans [`docs/security-review-test-prototype.md`](./security-review-test-prototype.md). Elle identifie notamment l'écart PBKDF2 entre le Worker testé et la branche, l'exposition Internet du Worker de test, le coût des inscriptions, les effets du verrouillage de compte et les différences CORS/cookies entre le Worker autonome et Pages Functions. Cette revue n'est pas une approbation de production ni un test d'intrusion indépendant.
+
 ## Limites restantes / critères avant toute évolution
 
 1. Ajouter la suite automatisée locale pour les cas listés ci-dessus.
