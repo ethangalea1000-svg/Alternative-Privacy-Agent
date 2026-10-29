@@ -6,3 +6,17 @@
 
 /* Regression fix: compact two-column navigation on narrow phones (including 390px). */
 @media (max-width: 430px){.nav-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;overflow:visible}.nav-link{box-sizing:border-box;display:flex;align-items:center;gap:7px;width:100%;min-width:0;padding:8px 7px;font-size:11px;white-space:normal;overflow-wrap:anywhere}.nav-link>span:first-child{flex:none;width:17px;font-size:15px}.nav-count{flex:none;margin-left:auto;padding:0 5px}}
+
+/* Inline SVG icons: predictable rendering across mobile browsers. */
+.icon-svg{display:block;width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-icon{display:grid;place-items:center;flex:none}
+.nav-icon .icon-svg{width:18px;height:18px}
+.stat-icon .icon-svg{width:17px;height:17px}
+.alias-symbol .icon-svg{width:21px;height:21px}
+.empty-illustration .icon-svg{width:28px;height:28px}
+.privacy-section-icon .icon-svg{width:21px;height:21px}
+.search-box>span:first-child{display:grid;place-items:center}
+.search-box .icon-svg{width:19px;height:19px}
+.identity-links a{display:inline-flex;align-items:center;gap:6px}
+.identity-links .icon-svg{width:14px;height:14px}
+.icon-button .icon-svg,.close-button .icon-svg,.primary-button .icon-svg{width:16px;height:16px}
