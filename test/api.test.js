@@ -10,7 +10,7 @@ import { onRequest as meHandler } from "../functions/api/auth/me.js";
 import {
   isValidId, newInternalLabel, readJsonObject, validateAliasInput, validateStatusInput
 } from "../functions/_lib/http.js";
-import { SESSION_COOKIE, createPasswordRecord } from "../functions/_lib/auth.js";
+import { SESSION_COOKIE, createPasswordRecord, verifyPassword } from "../functions/_lib/auth.js";
 import { LOGIN_RATE_LIMIT_POLICY, recordLoginFailure } from "../functions/_lib/login-rate-limit.js";
 import { onRequest as apiMiddleware } from "../functions/api/_middleware.js";
 
@@ -598,6 +598,22 @@ test("test-branch password records use the documented Workers-compatible test se
   assert.match(record.password_salt, /^[a-f0-9]{32}$/);
 });
 
+
+test("login accepts only stored PBKDF2 iteration counts supported by the test policy", async () => {
+  const password = "synthetic-test-password";
+  const record = await createPasswordRecord(password);
+
+  assert.equal(
+    await verifyPassword(password, { ...record, password_iterations: 100_000 }),
+    true,
+    "a matching hash at the configured 100,000 iterations must be accepted"
+  );
+  assert.equal(
+    await verifyPassword(password, { ...record, password_iterations: 1_000_000 }),
+    false,
+    "a stored record claiming 1,000,000 iterations must be rejected"
+  );
+});
 
 test("registration stops at the 20-account synthetic test cap", async () => {
   const db = fakeDb();
