@@ -3,7 +3,8 @@ import { json, getDatabase, newId } from "./http.js";
 export const SESSION_COOKIE = "apa_session";
 export const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const SESSION_TTL_MS = SESSION_TTL_SECONDS * 1000;
-const PBKDF2_ITERATIONS = 310_000;
+// Test prototype only: matches the observed Workers Web Crypto ceiling. Not a production security approval.
+const PBKDF2_ITERATIONS = 100_000;
 const PASSWORD_MAX_LENGTH = 128;
 const USERNAME_PATTERN = /^[a-z0-9][a-z0-9_-]{2,31}$/;
 const encoder = new TextEncoder();
