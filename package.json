@@ -4,7 +4,7 @@
   "version": "0.3.0",
   "type": "module",
   "scripts": {
-    "test": "node --check app.js && node --check prototype-store.js && node --check identity-store.js && node --test && node test/mobile-nav.browser.test.js"
+    "test": "node --check app.js && node --check prototype-store.js && node --check identity-store.js && node --test"
   },
   "engines": {
     "node": ">=20"
