@@ -18,13 +18,23 @@ export async function onRequest(context) {
 
   const { username, password } = validated.value;
   try {
+    const rateLimit = await loginRateLimitStatus(db, request, username);
+    if (rateLimit.blocked) {
+      return json({ error: "too_many_login_attempts", retry_after_seconds: rateLimit.retryAfter }, 429, {
+        "retry-after": String(rateLimit.retryAfter)
+      });
+    }
     const user = await db.prepare(
       "SELECT id, username, password_hash, password_salt, password_iterations, created_at FROM users WHERE username = ?"
     ).bind(username).first();
 
     const passwordMatches = await verifyPassword(password, user);
-    if (!user || !passwordMatches) return json({ error: "invalid_credentials" }, 401);
+    if (!user || !passwordMatches) {
+      await recordLoginFailure(db, rateLimit.keys);
+      return json({ error: "invalid_credentials" }, 401);
+    }
 
+    await clearLoginFailures(db, rateLimit.keys);
     const session = await createSession(db, user.id);
     return json({ user: publicUser(user) }, 200, { "set-cookie": session.cookie });
   } catch {
