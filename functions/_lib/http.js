@@ -56,7 +56,7 @@ async function constantTimeTokenMatch(left, right) {
   for (let index = 0; index < first.length; index += 1) {
     difference |= first[index] ^ second[index];
   }
-  return difference === 0;
+  return difference === 0 && left.length === right.length;
 }
 
 export function isValidCategory(value) {
