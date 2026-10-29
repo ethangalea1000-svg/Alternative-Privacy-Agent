@@ -26,15 +26,15 @@ export async function onRequest(context) {
     const parsed = await readJsonObject(request);
     if (parsed.error) return parsed.error;
     const validated = validateStatusInput(parsed.value);
-    if (validated.errors) return json({ error: "validation_failed", fields: validated.errors }, 400);
+    if (validated.error) return json({ error: validated.error }, 400);
 
     const now = new Date().toISOString();
     try {
       const result = await db.prepare(
         "UPDATE aliases SET status = ?, updated_at = ? WHERE id = ? AND owner_id = ?"
-      ).bind(validated.value.status, now, id, user.id).run();
+      ).bind(validated.value, now, id, user.id).run();
       if (!result.meta || result.meta.changes === 0) return json({ error: "alias_not_found" }, 404);
-      return json({ ok: true, id, status: validated.value.status, updated_at: now });
+      return json({ ok: true, id, status: validated.value, updated_at: now });
     } catch {
       return json({ error: "database_error" }, 500);
     }
