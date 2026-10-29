@@ -1,4 +1,4 @@
-import { json, getDatabase, newId } from "./http.js";
+import { json, getDatabase, newId, testOriginError } from "./http.js";
 
 export const SESSION_COOKIE = "apa_session";
 export const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -6,7 +6,7 @@ const SESSION_TTL_MS = SESSION_TTL_SECONDS * 1000;
 // Test prototype only: matches the observed Workers Web Crypto ceiling. Not a production security approval.
 const PBKDF2_ITERATIONS = 100_000;
 const PASSWORD_MAX_LENGTH = 128;
-const USERNAME_PATTERN = /^test-[a-z0-9][a-z0-9_-]{1,26}$/;
+const USERNAME_PATTERN = /^test-[a-z0-9][a-z0-9_-]{0,26}$/;
 const encoder = new TextEncoder();
 
 function toHex(bytes) {
@@ -39,29 +39,20 @@ async function hashSessionToken(token) {
 export function validateCredentials(value) {
   const username = typeof value.username === "string" ? value.username.trim().toLowerCase() : "";
   const password = typeof value.password === "string" ? value.password : "";
-  const errors = {};
-  if (!USERNAME_PATTERN.test(username)) {
-    errors.username = "must_start_with_test_and_use_7_to_32_lowercase_letters_numbers_underscores_or_hyphens";
-  }
+  if (!USERNAME_PATTERN.test(username)) return { error: "test_username_required" };
   if (password.length < 10 || password.length > PASSWORD_MAX_LENGTH) {
-    errors.password = "must_be_10_to_128_characters";
+    return { error: "password_must_be_10_to_128_characters" };
   }
-  if (Object.keys(errors).length) return { errors };
   return { value: { username, password } };
 }
 
 export function sameOriginError(request) {
-  const origin = request.headers.get("origin");
-  let expectedOrigin;
   try {
-    expectedOrigin = new URL(request.url).origin;
+    new URL(request.url);
   } catch {
     return json({ error: "invalid_request_origin" }, 400);
   }
-  if (!origin || origin !== expectedOrigin) {
-    return json({ error: "same_origin_required" }, 403);
-  }
-  return null;
+  return testOriginError(request);
 }
 
 export function getSessionCookie(request) {
@@ -72,11 +63,11 @@ export function getSessionCookie(request) {
 
 export function sessionCookie(token) {
   return SESSION_COOKIE + "=" + token +
-    "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + SESSION_TTL_SECONDS;
+    "; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=" + SESSION_TTL_SECONDS;
 }
 
 export function expiredSessionCookie() {
-  return SESSION_COOKIE + "=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  return SESSION_COOKIE + "=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
 }
 
 export async function createPasswordRecord(password) {
