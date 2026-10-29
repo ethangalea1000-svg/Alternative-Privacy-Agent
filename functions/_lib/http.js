@@ -2,6 +2,7 @@ const CATEGORIES = new Set(["achats", "projets", "public", "personnel"]);
 const STATUSES = new Set(["planned", "active", "paused"]);
 const MAX_BODY_BYTES = 4096;
 const TOKEN_MIN_LENGTH = 32;
+const TOKEN_MAX_LENGTH = 512;
 
 export function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -10,7 +11,13 @@ export function json(data, status = 200, extraHeaders = {}) {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
       "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
       "referrer-policy": "no-referrer",
+      "cross-origin-resource-policy": "same-origin",
+      "cross-origin-opener-policy": "same-origin",
+      "content-security-policy": "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+      "permissions-policy": "camera=(), microphone=(), geolocation=()",
+      "strict-transport-security": "max-age=31536000",
       ...extraHeaders
     }
   });
@@ -26,11 +33,12 @@ export async function requireApiToken(request, env) {
   const match = /^Bearer ([^\s]+)$/.exec(authorization);
   const supplied = match?.[1] || "";
 
-  // Fail closed if no sufficiently strong secret has been configured.
-  if (expected.length < TOKEN_MIN_LENGTH) {
+  // Fail closed when the deployment secret is missing, weak, or unreasonably large.
+  if (expected.length < TOKEN_MIN_LENGTH || expected.length > TOKEN_MAX_LENGTH) {
     return json({ error: "service_not_configured" }, 503);
   }
-  if (!match || supplied.length < TOKEN_MIN_LENGTH || !(await constantTimeTokenMatch(supplied, expected))) {
+  if (!match || supplied.length < TOKEN_MIN_LENGTH || supplied.length > TOKEN_MAX_LENGTH ||
+      supplied.length !== expected.length || !(await constantTimeTokenMatch(supplied, expected))) {
     return json({ error: "unauthorized" }, 401, { "www-authenticate": "Bearer" });
   }
   return null;
@@ -48,7 +56,7 @@ async function constantTimeTokenMatch(left, right) {
   for (let index = 0; index < first.length; index += 1) {
     difference |= first[index] ^ second[index];
   }
-  return difference === 0 && left.length === right.length;
+  return difference === 0;
 }
 
 export function isValidCategory(value) {
@@ -60,25 +68,60 @@ export function isValidStatus(value) {
 }
 
 export async function readJsonObject(request) {
-  const contentType = request.headers.get("content-type") || "";
-  if (!contentType.toLowerCase().includes("application/json")) {
+  const contentType = (request.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+  if (contentType !== "application/json") {
     return { error: json({ error: "content_type_must_be_application_json" }, 415) };
   }
 
-  const declaredLength = Number(request.headers.get("content-length") || 0);
-  if (declaredLength > MAX_BODY_BYTES) {
-    return { error: json({ error: "request_body_too_large" }, 413) };
+  const declaredLength = request.headers.get("content-length");
+  if (declaredLength !== null) {
+    if (!/^\d+$/.test(declaredLength)) {
+      return { error: json({ error: "invalid_content_length" }, 400) };
+    }
+    const length = Number(declaredLength);
+    if (!Number.isSafeInteger(length)) {
+      return { error: json({ error: "invalid_content_length" }, 400) };
+    }
+    if (length > MAX_BODY_BYTES) {
+      return { error: json({ error: "request_body_too_large" }, 413) };
+    }
+  }
+
+  // Enforce the byte limit while reading, not after buffering an unbounded body.
+  const chunks = [];
+  let totalBytes = 0;
+  if (request.body) {
+    const reader = request.body.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.byteLength;
+        if (totalBytes > MAX_BODY_BYTES) {
+          await reader.cancel("request body too large").catch(() => {});
+          return { error: json({ error: "request_body_too_large" }, 413) };
+        }
+        chunks.push(value);
+      }
+    } catch {
+      return { error: json({ error: "invalid_request_body" }, 400) };
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
   }
 
   let text;
   try {
-    text = await request.text();
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
-    return { error: json({ error: "invalid_request_body" }, 400) };
-  }
-
-  if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
-    return { error: json({ error: "request_body_too_large" }, 413) };
+    return { error: json({ error: "invalid_request_body_encoding" }, 400) };
   }
 
   let value;
@@ -141,5 +184,6 @@ export function newInternalLabel(name) {
 }
 
 export function isValidId(value) {
-  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(value) && value.length === 36;
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
