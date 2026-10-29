@@ -124,31 +124,36 @@ La revue source-level est consignée dans [`docs/security-review-test-prototype.
 
 ## Réconciliation Worker de test ↔ branche expérimentale
 
-La branche a été ajustée côté code (sans déploiement) pour aligner les contrôles test-only connus avec le Worker rapporté :
+Le code Worker de référence a été fourni par l'utilisateur. La branche Pages Functions a été ajustée côté code (sans déploiement) pour rapprocher les contrats HTTP et les règles de validation de ce Worker :
 
 - PBKDF2-SHA-256 à 100 000 itérations, marqué explicitement comme paramètre de test uniquement.
 - Noms d'utilisateur obligatoirement préfixés par `test-`.
 - Limite de 20 comptes synthétiques et de 25 alias par utilisateur (garde-fous test-only ; les contrôles par comptage ne sont pas atomiques face à des requêtes concurrentes).
 - Vérification de doublon et de plafond avant le calcul PBKDF2, afin d'éviter un coût inutile.
 - `GET /api/health` vérifie désormais réellement que `env.DB` répond à `SELECT 1` et renvoie l'état de la base.
-- Catégories, statuts, longueur de mot de passe, expiration des sessions et règle de limitation de connexion restent couverts par les tests locaux.
+- Catégories, statuts, préfixe et longueur des noms d’alias, longueurs des identifiants/mots de passe, expiration des sessions et règle de limitation de connexion restent couverts par les tests locaux.
 
-### Différences restantes, conservées volontairement
+### État de la réconciliation et écarts résiduels
 
-| Sujet | Worker autonome de test rapporté | Branche Pages Functions |
-|---|---|---|
-| Topologie navigateur | CORS autorisant certaines origines locales de développement ; cookie adapté au test cross-origin | API conçue en same-origin ; vérification stricte de `Origin`, cookie `SameSite=Lax` |
-| Erreur d'origine refusée | `test_origin_not_allowed` rapporté | `same_origin_required` |
-| Identifiant de service health | `apa-test-api` | `apa-api` |
-| Source exécutée | Code collé dans le dashboard Cloudflare | Code versionné dans ce dépôt |
+| Sujet | État dans la branche après correction |
+|---|---|
+| PBKDF2 | 100 000 itérations, explicitement test-only |
+| Validation du compte | Préfixe `test-`, 10–128 caractères pour le mot de passe, mêmes codes d'erreur |
+| Validation des alias | Préfixe `test-`, catégories/statuts autorisés et codes d'erreur alignés |
+| CORS | Origine du Worker ou origines locales de test autorisées ; autres origines refusées pour les mutations |
+| Préflight | `OPTIONS` renvoie 204 pour une origine autorisée et 403 sinon |
+| Cookies | `HttpOnly; Secure; SameSite=None; Max-Age=604800` pour les tests cross-origin |
+| En-têtes | CORP `cross-origin`, HSTS et autres en-têtes de sécurité |
+| Health | `apa-test-api` et vérification réelle de `SELECT 1` |
+| Réponses | Codes d'erreur, réponses de validation et corps 405 rapprochés du Worker |
 
-Ces différences de CORS/cookies sont liées à la topologie d'exécution et ne doivent pas être copiées aveuglément d'une variante à l'autre. L'alignement des règles métier ne signifie pas que les deux artefacts sont identiques octet par octet. La source exacte déployée dans le dashboard n'est pas versionnée dans le dépôt ; le rapprochement complet nécessite de la recopier dans un fichier dédié puis de vérifier son diff. Aucun changement de code n'a été déployé par cette étape.
+La branche Pages Functions reste une implémentation versionnée qui partage les contrats attendus ; cela ne signifie pas que son artefact d'exécution est identique octet par octet au Worker autonome. La liste des alias de la branche conserve en plus des filtres de requête (`category`, `status`, `limit`) ; confirmer si ces paramètres existent dans le Worker de référence avant de déclarer une parité totale de la surface API. Aucun changement de code n'a été déployé par cette étape.
 
 ## Limites restantes / critères avant toute évolution
 
 1. [x] Ajouter les tests locaux de non-régression demandés ; le job « Run tests » a réussi sur le dernier commit vérifié (les étapes de nettoyage GitHub Actions étaient encore en cours au moment de la vérification).
 2. [x] Séparer les tests locaux, les tests SQLite en mémoire et la suite distante opt-in non destructive.
-3. [~] Aligner les règles connues Worker/branche (PBKDF2 de test, préfixe `test-`, plafonds, health avec contrôle D1). La comparaison exacte du source déployé reste impossible tant que le code collé dans le dashboard n'est pas versionné ; les différences CORS/cookies sont documentées.
+3. [~] Contrats de validation, CORS, cookies, en-têtes et réponses alignés sur le Worker de référence fourni. Confirmer encore si les filtres de liste `category`, `status` et `limit` sont aussi présents dans le Worker avant de déclarer une parité complète de toutes les routes.
 4. [x] Réaliser et documenter une revue sécurité source-level ; ce n'est pas un test d'intrusion ni une validation production.
 5. [ ] Exécuter la suite distante opt-in et vérifier le comportement cookies/CORS dans un navigateur pris en charge. La suite distante n'a pas été exécutée par l'assistant.
 6. [ ] Désactiver le Worker de test lorsqu'il n'est plus nécessaire.
