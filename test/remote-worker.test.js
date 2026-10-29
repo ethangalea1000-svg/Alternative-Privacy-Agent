@@ -71,6 +71,7 @@ test("REMOTE: health response includes baseline security headers", remoteTest, a
 test("REMOTE: unknown API path returns not found", remoteTest, async () => {
   const response = await call("/api/remote-regression-path-that-does-not-exist");
   assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), { error: "not_found" });
 });
 
 
