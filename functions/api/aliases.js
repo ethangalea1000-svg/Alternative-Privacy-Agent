@@ -75,6 +75,12 @@ export async function onRequest(context) {
   const label = newInternalLabel(validated.value.name);
 
   try {
+    const ownedCount = await db.prepare("SELECT COUNT(*) AS count FROM aliases WHERE owner_id = ?")
+      .bind(user.id).first();
+    if (Number(ownedCount?.count) >= 25) {
+      return json({ error: "test_alias_limit_reached" }, 429);
+    }
+
     await db.prepare(
       "INSERT INTO aliases (id, name, label, category, status, created_at, updated_at, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     ).bind(id, validated.value.name, label, validated.value.category, validated.value.status,
