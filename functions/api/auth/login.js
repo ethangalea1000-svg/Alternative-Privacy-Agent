@@ -15,7 +15,7 @@ export async function onRequest(context) {
   const parsed = await readJsonObject(request);
   if (parsed.error) return parsed.error;
   const validated = validateCredentials(parsed.value);
-  if (validated.errors) return json({ error: "validation_failed", fields: validated.errors }, 400);
+  if (validated.error) return json({ error: validated.error }, 400);
 
   const { username, password } = validated.value;
   try {
