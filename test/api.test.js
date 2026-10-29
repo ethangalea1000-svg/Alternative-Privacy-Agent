@@ -10,7 +10,7 @@ import { onRequest as meHandler } from "../functions/api/auth/me.js";
 import {
   isValidId, newInternalLabel, readJsonObject, validateAliasInput, validateStatusInput
 } from "../functions/_lib/http.js";
-import { SESSION_COOKIE } from "../functions/_lib/auth.js";
+import { SESSION_COOKIE, createPasswordRecord } from "../functions/_lib/auth.js";
 import { LOGIN_RATE_LIMIT_POLICY, recordLoginFailure } from "../functions/_lib/login-rate-limit.js";
 import { onRequest as apiMiddleware } from "../functions/api/_middleware.js";
 
@@ -574,4 +574,12 @@ test("malformed session cookies are rejected without database access", async () 
     assert.equal(response.status, 401);
   }
   assert.equal(db.state.lastSql, "", "invalid cookie must not trigger a database query");
+});
+
+
+test("test-branch password records use the documented Workers-compatible test setting", async () => {
+  const record = await createPasswordRecord("synthetic-test-password");
+  assert.equal(record.password_iterations, 100_000);
+  assert.match(record.password_hash, /^[a-f0-9]{64}$/);
+  assert.match(record.password_salt, /^[a-f0-9]{32}$/);
 });
