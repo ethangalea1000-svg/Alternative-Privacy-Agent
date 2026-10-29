@@ -48,11 +48,11 @@
 
 ### P2 — Cross-origin browser behavior is not identical between the two implementations
 
-**Evidence:** the Pages Functions branch uses strict same-origin checks (`Origin` must equal the request URL origin) and `SameSite=Lax`; the reported standalone test Worker uses an allowlist for development origins and cross-origin cookie behavior.
+**Evidence:** the branch has now been changed to match the test Worker’s development-origin allowlist, CORS credential headers, and `SameSite=None` cookie attributes. This makes local cross-origin browser testing possible; the allowlist still does not protect against non-browser callers.
 
-**Impact:** a browser test that succeeds against one implementation may fail against the other because of CORS, cookie policy or origin validation. A CORS allowlist is not authentication and does not replace authorization checks.
+**Impact:** the two implementations are closer, but browser cookie policy can still block third-party cookies. `SameSite=None` increases cross-site cookie exposure and requires careful CSRF/origin enforcement. A CORS allowlist is not authentication and does not replace authorization checks.
 
-**Required action:** choose and document the intended test topology. Verify preflight, allowed/disallowed origins, credentials, cookie attributes and CSRF protections against the actual deployed Worker. Do not silently copy cross-origin settings into a future production configuration.
+**Required action:** keep these cross-origin settings confined to the test prototype. The local automated tests now cover preflight and allowed-origin headers, but remote/browser behavior still needs verification. Do not copy `SameSite=None` or development-origin allowlists into production without a dedicated CSRF and cookie-policy review.
 
 ### P3 — User-reported remote results are not yet independently reproducible from repository evidence
 
@@ -66,7 +66,7 @@
 
 - Alias queries and mutations include the authenticated user's `owner_id`.
 - Session tokens are random; only token hashes are stored; sessions have expiration and user foreign keys.
-- Cookies are marked `HttpOnly`, `Secure`, and `SameSite=Lax` in the Pages branch.
+- Cookies are marked `HttpOnly`, `Secure`, and `SameSite=None` in the experimental branch to support the reported cross-origin test topology; this is test-only and not a production recommendation.
 - Input JSON is size-limited and validated; SQL uses bound parameters.
 - API errors generally avoid returning raw SQL error details.
 - Login throttling stores hashed IP/username bucket keys and removes stale buckets.
