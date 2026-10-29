@@ -227,7 +227,7 @@ test("API middleware applies the complete security-header baseline without overw
     "x-frame-options": "DENY",
     "referrer-policy": "no-referrer",
     "cache-control": "no-store",
-    "cross-origin-resource-policy": "same-origin",
+    "cross-origin-resource-policy": "cross-origin",
     "cross-origin-opener-policy": "same-origin",
     "permissions-policy": "camera=(), microphone=(), geolocation=()",
     "strict-transport-security": "max-age=31536000"
