@@ -19,6 +19,8 @@ export function validateAlias(item) {
     !/[\u0000-\u001f\u007f]/.test(site) &&
     typeof notes === "string" && notes.length <= MAX_NOTES_LENGTH &&
     !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(notes);
+}
+
 
 export function normalizeAlias(item) {
   return {
