@@ -1,7 +1,8 @@
+import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeImportedAliases, updateAlias, validateAlias } from "./prototype-store.js";
+
 (() => {
   "use strict";
 
-  import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeImportedAliases, updateAlias, validateAlias } from "./prototype-store.js";
 
   const categories = {
     achats: "Achats",
