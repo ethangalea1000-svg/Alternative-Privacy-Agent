@@ -538,3 +538,40 @@ test("API middleware adds security headers to responses that lack them", async (
   assert.match(response.headers.get("content-security-policy") || "", /default-src 'none'/);
   assert.equal(response.headers.get("cache-control"), "no-store");
 });
+
+
+test("legacy alias rows with owner_id NULL stay preserved and invisible to authenticated users", async () => {
+  const db = fakeDb();
+  const cookie = cookieHeader(await register(db));
+  const legacy = {
+    id: "00000000-0000-4000-8000-000000000099",
+    name: "Legacy synthetic alias",
+    label: "legacy-synthetic",
+    category: "public",
+    status: "active",
+    created_at: "2025-01-01T00:00:00.000Z",
+    updated_at: "2025-01-01T00:00:00.000Z",
+    owner_id: null
+  };
+  db.state.aliases.push(legacy);
+
+  const listed = await aliasesHandler(context(request("/api/aliases", { cookie }), db));
+  assert.equal(listed.status, 200);
+  assert.deepEqual((await listed.json()).aliases, []);
+  assert.equal(db.state.aliases.length, 1, "legacy row must not be deleted");
+  assert.equal(db.state.aliases[0].id, legacy.id);
+  assert.equal(db.state.aliases[0].owner_id, null);
+});
+
+test("malformed session cookies are rejected without database access", async () => {
+  const db = fakeDb();
+  for (const cookie of [
+    SESSION_COOKIE + "=not-a-token",
+    SESSION_COOKIE + "=" + "a".repeat(63),
+    SESSION_COOKIE + "=" + "g".repeat(64)
+  ]) {
+    const response = await meHandler(context(request("/api/auth/me", { cookie }), db));
+    assert.equal(response.status, 401);
+  }
+  assert.equal(db.state.lastSql, "", "invalid cookie must not trigger a database query");
+});
