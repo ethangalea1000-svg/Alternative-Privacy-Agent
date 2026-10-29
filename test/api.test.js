@@ -48,6 +48,7 @@ function fakeDb() {
         bind(...values) { this.values = values; state.lastValues = values; return this; },
         async first() {
           const values = state.lastValues;
+          if (/SELECT 1 AS ok/i.test(sql)) return { ok: 1 };
           if (/FROM auth_login_limits WHERE key_hash = \?/i.test(sql)) {
             const row = state.loginLimits.find((item) => item.key_hash === values[0]);
             return row ? { blocked_until: row.blocked_until, window_started_at: row.window_started_at } : null;
@@ -189,11 +190,17 @@ async function createAlias(db, cookie, name = "Private alias") {
   }), db));
 }
 
-test("health endpoint returns minimal public status", async () => {
-  const response = healthHandler({ request: request("/api/health") });
+test("health endpoint verifies D1 connectivity and returns minimal public status", async () => {
+  const response = await healthHandler(context(request("/api/health"), fakeDb()));
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { ok: true, service: "apa-api" });
+  assert.deepEqual(await response.json(), { ok: true, service: "apa-api", database: "ok" });
   assert.equal(response.headers.get("cache-control"), "no-store");
+});
+
+test("health endpoint fails closed when D1 is not configured", async () => {
+  const response = await healthHandler({ request: request("/api/health"), env: {} });
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { ok: false, service: "apa-api", database: "unavailable" });
 });
 
 test("registration creates a user and a secure HttpOnly session cookie", async () => {
