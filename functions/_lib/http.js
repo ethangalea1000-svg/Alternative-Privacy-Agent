@@ -1,6 +1,55 @@
 const CATEGORIES = new Set(["achats", "projets", "public", "personnel"]);
 const STATUSES = new Set(["planned", "active", "paused"]);
 const MAX_BODY_BYTES = 4096;
+const ALLOWED_TEST_ORIGINS = new Set([
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173"
+]);
+
+export function isAllowedOrigin(request) {
+  const origin = request.headers.get("origin");
+  if (!origin) return false;
+  try {
+    const parsed = new URL(origin);
+    if (parsed.origin === new URL(request.url).origin) return true;
+    return ALLOWED_TEST_ORIGINS.has(parsed.origin);
+  } catch {
+    return false;
+  }
+}
+
+export function corsHeaders(request) {
+  const origin = request.headers.get("origin");
+  if (!origin || !isAllowedOrigin(request)) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "600",
+    "Vary": "Origin"
+  };
+}
+
+export function withCors(response, request) {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(corsHeaders(request))) {
+    headers.set(name, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
+export function testOriginError(request) {
+  return isAllowedOrigin(request) ? null : json({ error: "test_origin_not_allowed" }, 403);
+}
 
 export function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -11,7 +60,7 @@ export function json(data, status = 200, extraHeaders = {}) {
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
       "referrer-policy": "no-referrer",
-      "cross-origin-resource-policy": "same-origin",
+      "cross-origin-resource-policy": "cross-origin",
       "cross-origin-opener-policy": "same-origin",
       "content-security-policy": "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
       "permissions-policy": "camera=(), microphone=(), geolocation=()",
@@ -112,29 +161,31 @@ export async function readJsonObject(request) {
 }
 
 export function validateAliasInput(value) {
-  const errors = {};
-  if (typeof value.name !== "string" || value.name.trim().length < 1 || value.name.trim().length > 48 || hasControlCharacters(value.name)) {
-    errors.name = "must_be_1_to_48_printable_characters";
+  if (
+    typeof value.name !== "string" ||
+    !/^test-[a-z0-9][a-z0-9 _-]{0,41}$/i.test(value.name.trim())
+  ) {
+    return { error: "test_alias_name_required" };
   }
   if (!isValidCategory(value.category)) {
-    errors.category = "invalid_category";
+    return { error: "invalid_category" };
   }
-  if (value.status !== undefined && !isValidStatus(value.status)) {
-    errors.status = "invalid_status";
+  const status = value.status === undefined ? "planned" : value.status;
+  if (!isValidStatus(status)) {
+    return { error: "invalid_status" };
   }
-  if (Object.keys(errors).length) return { errors };
   return {
     value: {
       name: value.name.trim(),
       category: value.category,
-      status: value.status || "planned"
+      status
     }
   };
 }
 
 export function validateStatusInput(value) {
-  if (!isValidStatus(value.status)) return { errors: { status: "invalid_status" } };
-  return { value: { status: value.status } };
+  if (!isValidStatus(value.status)) return { error: "invalid_status" };
+  return { value: value.status };
 }
 
 export function getDatabase(env) {
