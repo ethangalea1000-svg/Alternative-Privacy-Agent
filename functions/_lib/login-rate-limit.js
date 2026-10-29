@@ -10,10 +10,7 @@ async function hashKey(value) {
 
 function getClientIp(request) {
   const value = request.headers.get("cf-connecting-ip");
-  if (value && value.length <= 64 && !/[\r\n]/.test(value)) return value;
-  const contextIp = request.cf?.connectingIp;
-  if (typeof contextIp === "string" && contextIp.length <= 64 && !/[\r\n]/.test(contextIp)) return contextIp;
-  return "unknown-client";
+  return value && value.length <= 64 ? value : "unknown-client";
 }
 
 async function bucketKeys(request, username) {
@@ -27,7 +24,7 @@ export async function loginRateLimitStatus(db, request, username, now = Date.now
   const keys = await bucketKeys(request, username);
   for (const key of keys) {
     const row = await db.prepare(
-      "SELECT blocked_until, window_started_at FROM auth_login_limits WHERE key_hash = ?"
+      "SELECT blocked_until FROM auth_login_limits WHERE key_hash = ?"
     ).bind(key).first();
     if (row && Number(row.blocked_until) > now) {
       return { blocked: true, retryAfter: Math.max(1, Math.ceil((Number(row.blocked_until) - now) / 1000)) };
