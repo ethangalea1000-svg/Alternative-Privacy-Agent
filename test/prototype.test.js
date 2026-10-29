@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { parseStoredAliases, serializeAliases, parseBackup, mergeImportedAliases, updateAlias, validateAlias, STORAGE_KEY } from "../prototype-store.js";
 const base = { id:"id-1", name:"Shopping", label:"shopping-ab12", category:"achats", status:"active", createdAt:"2026-10-01T12:00:00.000Z", site:"Example Store", notes:"Alias used for receipts" };
 
@@ -39,3 +40,18 @@ test("updates alias details while preserving identity and creation date", () => 
 });
 test("does not change records when unknown ID is edited", () => assert.deepEqual(updateAlias([base],"missing",{name:"changed"}),[base]));
 test("does not serialize invalid alias data", () => assert.throws(()=>serializeAliases([{...base,name:""}]),/invalide/));
+
+test("prototype page connects the module and all requested controls", async () => {
+  const [html, app] = await Promise.all([
+    readFile(new URL("../index.html", import.meta.url), "utf8"),
+    readFile(new URL("../app.js", import.meta.url), "utf8")
+  ]);
+  assert.match(html, /<script type="module" src="\.\/app\.js"><\/script>/);
+  for (const id of ["alias-site", "alias-notes", "export-backup", "import-backup", "backup-file", "save-alias"]) {
+    assert.match(html, new RegExp('id="' + id + '"'));
+  }
+  for (const handler of ["parseBackup", "serializeAliases", "updateAlias", "mergeImportedAliases"]) {
+    assert.match(app, new RegExp("\\b" + handler + "\\b"));
+  }
+  assert.match(html, /identifiants de classement, pas des adresses e-mail fonctionnelles/i);
+});
