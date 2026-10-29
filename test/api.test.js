@@ -208,3 +208,72 @@ test("request body size is limited", async () => {
   }));
   assert.equal(oversized.error.status, 413);
 });
+
+
+test("API responses include defensive security headers", async () => {
+  const response = await aliasesHandler(context(request("/api/aliases", { token: null })));
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.match(response.headers.get("content-security-policy") || "", /default-src 'none'/);
+  assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
+});
+
+test("JSON content type matching is exact and malformed content lengths are rejected", async () => {
+  const wrongMime = await readJsonObject(request("/api/aliases", {
+    method: "POST", body: "{}", contentType: "application/jsonp"
+  }));
+  assert.equal(wrongMime.error.status, 415);
+
+  const badLengthRequest = new Request("https://apa.test/api/aliases", {
+    method: "POST",
+    headers: { "content-type": "application/json", "content-length": "unknown" },
+    body: "{}"
+  });
+  const badLength = await readJsonObject(badLengthRequest);
+  assert.equal(badLength.error.status, 400);
+
+  const largeDeclaredRequest = new Request("https://apa.test/api/aliases", {
+    method: "POST",
+    headers: { "content-type": "application/json", "content-length": "5000" },
+    body: "{}"
+  });
+  const largeDeclared = await readJsonObject(largeDeclaredRequest);
+  assert.equal(largeDeclared.error.status, 413);
+});
+
+test("JSON parser rejects invalid UTF-8", async () => {
+  const req = new Request("https://apa.test/api/aliases", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: new Uint8Array([0xc3, 0x28])
+  });
+  const parsed = await readJsonObject(req);
+  assert.equal(parsed.error.status, 400);
+  assert.equal((await parsed.error.json()).error, "invalid_request_body_encoding");
+});
+
+test("alias names are bound as SQL parameters rather than interpolated", async () => {
+  const db = fakeDb();
+  const maliciousLookingName = "x'); DROP TABLE aliases; --";
+  const response = await aliasesHandler(context(request("/api/aliases", {
+    method: "POST",
+    body: { name: maliciousLookingName, category: "achats" }
+  }), { db }));
+  assert.equal(response.status, 201);
+  assert.equal(db.state.lastSql.includes(maliciousLookingName), false);
+  assert.equal(db.state.lastValues.includes(maliciousLookingName), true);
+});
+
+test("database failures return generic errors without exposing internals", async () => {
+  const db = { prepare() { throw new Error("private SQL and connection details"); } };
+  const response = await aliasesHandler(context(request("/api/aliases"), { db }));
+  assert.equal(response.status, 500);
+  assert.deepEqual(await response.json(), { error: "database_error" });
+});
+
+test("UUID validation rejects non-canonical UUID shapes", () => {
+  assert.equal(isValidId("00000000-0000-0000-0000-000000000001"), false);
+  assert.equal(isValidId("00000000-0000-4000-0000-000000000001"), false);
+});
