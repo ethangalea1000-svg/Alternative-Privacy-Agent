@@ -11,6 +11,8 @@ import {
   isValidId, newInternalLabel, readJsonObject, validateAliasInput, validateStatusInput
 } from "../functions/_lib/http.js";
 import { SESSION_COOKIE } from "../functions/_lib/auth.js";
+import { LOGIN_RATE_LIMIT_POLICY } from "../functions/_lib/login-rate-limit.js";
+import { onRequest as apiMiddleware } from "../functions/api/_middleware.js";
 
 const USER_A = { username: "alice", password: "correct horse battery" };
 const USER_B = { username: "bob", password: "another strong password" };
@@ -36,7 +38,7 @@ function context(req, db = fakeDb(), params = {}) {
 }
 
 function fakeDb() {
-  const state = { users: [], sessions: [], aliases: [], lastSql: "", lastValues: [] };
+  const state = { users: [], sessions: [], aliases: [], loginLimits: [], lastSql: "", lastValues: [] };
   return {
     state,
     prepare(sql) {
@@ -76,6 +78,29 @@ function fakeDb() {
         },
         async run() {
           const values = state.lastValues;
+          if (/^INSERT INTO auth_login_limits/i.test(sql)) {
+            const [key_hash, now, updated_at, windowCutoff, windowCutoff2, windowCutoff3, maxFailures, blockedUntil] = values;
+            let row = state.loginLimits.find((item) => item.key_hash === key_hash);
+            if (!row) {
+              row = { key_hash, failed_attempts: 1, window_started_at: now, blocked_until: null, updated_at };
+              state.loginLimits.push(row);
+            } else {
+              if (row.window_started_at < windowCutoff) {
+                row.failed_attempts = 1;
+                row.window_started_at = now;
+              } else {
+                row.failed_attempts += 1;
+              }
+              if (row.failed_attempts >= maxFailures) row.blocked_until = blockedUntil;
+              row.updated_at = updated_at;
+            }
+            return { meta: { changes: 1 } };
+          }
+          if (/^DELETE FROM auth_login_limits WHERE key_hash = \\?/i.test(sql)) {
+            const before = state.loginLimits.length;
+            state.loginLimits = state.loginLimits.filter((item) => item.key_hash !== values[0]);
+            return { meta: { changes: before - state.loginLimits.length } };
+          }
           if (/^INSERT INTO users/i.test(sql)) {
             if (state.users.some((item) => item.username.toLowerCase() === String(values[1]).toLowerCase())) {
               throw new Error("UNIQUE constraint failed: users.username");
@@ -440,4 +465,45 @@ test("unsupported methods return 405", async () => {
   const auth = await registerHandler(context(request("/api/auth/register", { method: "GET" }), fakeDb()));
   assert.equal(collection.status, 405);
   assert.equal(auth.status, 405);
+});
+
+
+test("login rate limit blocks after ten failed attempts and exposes Retry-After", async () => {
+  const db = fakeDb();
+  const req = () => request("/api/auth/login", {
+    method: "POST", body: { username: "unknown-user", password: "incorrect password" },
+    origin: ORIGIN
+  });
+  assert.equal(LOGIN_RATE_LIMIT_POLICY.maxFailures, 10);
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const response = await loginHandler(context(req(), db));
+    assert.equal(response.status, 401, "failed attempt " + (attempt + 1));
+  }
+  assert.ok(db.state.loginLimits.length >= 2);
+  const blocked = await loginHandler(context(req(), db));
+  assert.equal(blocked.status, 429);
+  assert.ok(Number(blocked.headers.get("retry-after")) > 0);
+  assert.equal((await blocked.json()).error, "too_many_login_attempts");
+});
+
+test("successful login clears both hashed rate-limit buckets", async () => {
+  const db = fakeDb();
+  await register(db);
+  const bad = await login(db, { username: USER_A.username, password: "incorrect password" });
+  assert.equal(bad.status, 401);
+  assert.ok(db.state.loginLimits.length >= 2);
+  const good = await login(db, USER_A);
+  assert.equal(good.status, 200);
+  assert.equal(db.state.loginLimits.length, 0);
+});
+
+test("API middleware adds security headers to responses that lack them", async () => {
+  const response = await apiMiddleware({
+    request: request("/api/test"),
+    next: async () => new Response("ok", { status: 200 })
+  });
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.match(response.headers.get("content-security-policy") || "", /default-src 'none'/);
+  assert.equal(response.headers.get("cache-control"), "no-store");
 });
