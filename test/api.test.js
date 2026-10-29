@@ -329,7 +329,7 @@ test("all alias endpoints require a valid session", async () => {
   const id = "00000000-0000-4000-8000-000000000001";
   const get = await aliasesHandler(context(request("/api/aliases"), db));
   const post = await aliasesHandler(context(request("/api/aliases", {
-    method: "POST", body: { name: "No session", category: "achats" }
+    method: "POST", body: { name: "test-no-session", category: "achats" }
   }), db));
   const patch = await aliasItemHandler(context(request("/api/aliases/" + id, {
     method: "PATCH", body: { status: "paused" }
@@ -464,11 +464,15 @@ test("JSON parser rejects invalid UTF-8 and oversized request bodies", async () 
 test("alias names are bound as SQL parameters rather than interpolated", async () => {
   const db = fakeDb();
   const cookie = cookieHeader(await register(db));
-  const maliciousName = "x'); DROP TABLE aliases; --";
-  const response = await createAlias(db, cookie, maliciousName);
+  const safeName = "test-books-and-projects";
+  const response = await createAlias(db, cookie, safeName);
   assert.equal(response.status, 201);
-  assert.equal(db.state.lastSql.includes(maliciousName), false);
-  assert.equal(db.state.lastValues.includes(maliciousName), true);
+  assert.equal(db.state.lastSql.includes(safeName), false);
+  assert.equal(db.state.lastValues.includes(safeName), true);
+
+  const rejectedInjection = await createAlias(db, cookie, "test-x'); DROP TABLE aliases; --");
+  assert.equal(rejectedInjection.status, 400);
+  assert.deepEqual(await rejectedInjection.json(), { error: "test_alias_name_required" });
 });
 
 test("database failures return generic errors without exposing internals", async () => {
@@ -626,7 +630,7 @@ test("alias creation stops at 25 aliases per synthetic test user", async () => {
     updated_at: new Date(0).toISOString(),
     owner_id: ownerId
   }));
-  const response = await createAlias(db, cookie, "New synthetic alias");
+  const response = await createAlias(db, cookie, "test-new-synthetic-alias");
   assert.equal(response.status, 429);
   assert.deepEqual(await response.json(), { error: "test_alias_limit_reached" });
   assert.equal(db.state.aliases.length, 25);
