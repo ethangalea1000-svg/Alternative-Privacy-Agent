@@ -229,7 +229,7 @@ test("registration rejects passwords shorter than ten characters", async () => {
 
 test("registration normalizes usernames and rejects duplicate accounts", async () => {
   const db = fakeDb();
-  const first = await register(db, { username: "Alice", password: USER_A.password });
+  const first = await register(db, { username: "Test-Alice", password: USER_A.password });
   const duplicate = await register(db, { username: "TEST-ALICE", password: USER_A.password });
   assert.equal(first.status, 201);
   assert.equal(duplicate.status, 409);
@@ -270,7 +270,7 @@ test("login refuses an incorrect password without issuing a cookie", async () =>
 });
 
 test("login uses a generic failure for an unknown username", async () => {
-  const response = await login(fakeDb(), { username: "unknown", password: "wrong password here" });
+  const response = await login(fakeDb(), { username: "test-unknown", password: "wrong password here" });
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), { error: "invalid_credentials" });
 });
@@ -483,7 +483,7 @@ test("unsupported methods return 405", async () => {
 test("login rate limit blocks after ten failed attempts and exposes Retry-After", async () => {
   const db = fakeDb();
   const req = () => request("/api/auth/login", {
-    method: "POST", body: { username: "unknown-user", password: "incorrect password" },
+    method: "POST", body: { username: "test-unknown-user", password: "incorrect password" },
     origin: ORIGIN
   });
   assert.equal(LOGIN_RATE_LIMIT_POLICY.maxFailures, 10);
