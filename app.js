@@ -16,7 +16,33 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     active: "Actif",
     paused: "En pause"
   };
-  const symbols = { achats: "◇", projets: "⌘", public: "↗", personnel: "⌁" };
+  const categoryIcons = { achats: "shopping-bag", projets: "layers", public: "external-link", personnel: "user-round" };
+  const iconPaths = {
+    "shopping-bag": ["M6 8V6a6 6 0 0 1 12 0v2", "M4 8h16l1 13H3z"],
+    layers: ["M12 3 21 8 12 13 3 8z", "M3 12l9 5 9-5", "M3 16l9 5 9-5"],
+    "external-link": ["M14 4h6v6", "M20 4 11 13", "M18 13v6a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"],
+    "user-round": ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8", "M4 21a8 8 0 0 1 16 0"],
+    aliases: ["M4 7h16", "M4 12h16", "M4 17h16"],
+    edit: ["M12 20h9", "M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"],
+    pause: ["M8 5v14", "M16 5v14"],
+    play: ["m8 5 12 7-12 7z"],
+    trash: ["M3 6h18", "M8 6V4h8v2", "M19 6l-1 14H6L5 6", "M10 11v5", "M14 11v5"],
+    "arrow-up-right": ["M7 17 17 7", "M7 7h10v10"]
+  };
+  function svgIcon(name) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "icon-svg");
+    svg.setAttribute("data-icon", name);
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    for (const pathData of iconPaths[name] || iconPaths.aliases) {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", pathData);
+      svg.append(path);
+    }
+    return svg;
+  }
   const elements = {
     list: document.querySelector("#alias-list"),
     empty: document.querySelector("#empty-state"),
@@ -54,11 +80,11 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     const setLink = (anchor, url, label) => {
       const valid = url && url.startsWith("https://");
       anchor.hidden = !valid;
-      if (valid) { anchor.href = url; anchor.textContent = label; anchor.target = "_blank"; anchor.rel = "noopener noreferrer"; }
+      if (valid) { anchor.href = url; anchor.textContent = label; anchor.append(svgIcon("arrow-up-right")); anchor.target = "_blank"; anchor.rel = "noopener noreferrer"; }
       else anchor.removeAttribute("href");
     };
-    setLink(identityElements.githubLink, identity.githubUrl, "Ouvrir mon GitHub ↗");
-    setLink(identityElements.websiteLink, identity.websiteUrl, "Ouvrir mon site ↗");
+    setLink(identityElements.githubLink, identity.githubUrl, "Ouvrir mon GitHub");
+    setLink(identityElements.websiteLink, identity.websiteUrl, "Ouvrir mon site");
   }
   function displayIdentity() {
     identityElements.pseudonym.value = identity.pseudonym; identityElements.bio.value = identity.bio;
@@ -125,7 +151,7 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
 
   function createAliasCard(item) {
     const card = element("article", "alias-card");
-    const symbol = element("div", "alias-symbol", symbols[item.category]);
+    const symbol = element("div", "alias-symbol");\n    symbol.append(svgIcon(categoryIcons[item.category]));
     symbol.setAttribute("aria-hidden", "true");
     const main = element("div", "alias-main");
     const name = element("h3", "alias-name", item.name);
@@ -143,19 +169,19 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     date.setAttribute("aria-label", "Créé le " + formatDate(item.createdAt));
     const actions = element("div", "alias-actions");
 
-    const editButton = element("button", "icon-button", "✎");
+    const editButton = element("button", "icon-button");\n    editButton.append(svgIcon("edit"));
     editButton.type = "button";
     editButton.title = "Modifier cet alias";
     editButton.setAttribute("aria-label", "Modifier " + item.name);
     editButton.addEventListener("click", () => openDialog(item));
 
-    const statusButton = element("button", "icon-button", item.status === "paused" ? "▶" : "Ⅱ");
+    const statusButton = element("button", "icon-button");\n    statusButton.append(svgIcon(item.status === "paused" ? "play" : "pause"));
     statusButton.type = "button";
     statusButton.title = item.status === "paused" ? "Réactiver le suivi" : "Mettre en pause";
     statusButton.setAttribute("aria-label", statusButton.title + " : " + item.name);
     statusButton.addEventListener("click", () => toggleStatus(item.id));
 
-    const deleteButton = element("button", "icon-button danger", "×");
+    const deleteButton = element("button", "icon-button danger");\n    deleteButton.append(svgIcon("trash"));
     deleteButton.type = "button";
     deleteButton.title = "Supprimer cet identifiant";
     deleteButton.setAttribute("aria-label", "Supprimer " + item.name);
