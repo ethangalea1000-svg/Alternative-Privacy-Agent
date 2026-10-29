@@ -85,7 +85,7 @@ export async function verifyPassword(password, user) {
   const expected = fromHex(user?.password_hash);
   const iterations = Number(user?.password_iterations);
   if (!salt || !expected || expected.length !== 32 ||
-      !Number.isInteger(iterations) || iterations < 100_000 || iterations > 1_000_000) {
+      !Number.isInteger(iterations) || iterations < 100_000 || iterations > PBKDF2_ITERATIONS) {
     // Keep unknown-user and malformed-record login attempts computationally comparable.
     await derivePasswordHash(password, new Uint8Array(16));
     return false;
