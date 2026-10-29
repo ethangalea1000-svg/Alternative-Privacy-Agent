@@ -18,14 +18,21 @@ export async function onRequest(context) {
   if (validated.errors) return json({ error: "validation_failed", fields: validated.errors }, 400);
 
   const { username, password } = validated.value;
-  const id = newUserId();
-  const createdAt = new Date().toISOString();
-  const passwordRecord = await createPasswordRecord(password);
 
   try {
     const existing = await db.prepare("SELECT id FROM users WHERE username = ?")
       .bind(username).first();
     if (existing) return json({ error: "username_unavailable" }, 409);
+
+    const userCount = await db.prepare("SELECT COUNT(*) AS count FROM users").first();
+    if (Number(userCount?.count) >= 20) {
+      return json({ error: "test_user_limit_reached" }, 429);
+    }
+
+    // Cheap checks happen before PBKDF2 to limit avoidable CPU work on duplicates.
+    const id = newUserId();
+    const createdAt = new Date().toISOString();
+    const passwordRecord = await createPasswordRecord(password);
 
     await db.prepare(
       "INSERT INTO users (id, username, password_hash, password_salt, password_iterations, created_at) VALUES (?, ?, ?, ?, ?, ?)"
