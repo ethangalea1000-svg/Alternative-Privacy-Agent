@@ -454,7 +454,7 @@ test("JSON parser rejects invalid UTF-8 and oversized request bodies", async () 
   });
   const invalidUtf8 = await readJsonObject(invalidUtf8Request);
   assert.equal(invalidUtf8.error.status, 400);
-  assert.equal((await invalidUtf8.error.json()).error, "invalid_request_body_encoding");
+  assert.equal((await invalidUtf8.error.json()).error, "invalid_json");
   const oversized = await readJsonObject(request("/api/aliases", {
     method: "POST", body: { name: "x".repeat(5000), category: "achats" }
   }));
@@ -650,6 +650,13 @@ test("API middleware handles allowed local CORS preflight and credentials", asyn
   assert.equal(preflight.headers.get("access-control-allow-origin"), "http://localhost:3000");
   assert.equal(preflight.headers.get("access-control-allow-credentials"), "true");
   assert.match(preflight.headers.get("access-control-allow-methods") || "", /PATCH/);
+
+  const allowedActualRequest = await apiMiddleware({
+    request: request("/api/health", { origin: "http://localhost:3000" }),
+    next: async () => new Response(JSON.stringify({ ok: true }))
+  });
+  assert.equal(allowedActualRequest.headers.get("access-control-allow-origin"), "http://localhost:3000");
+  assert.equal(allowedActualRequest.headers.get("vary"), "Origin");
 
   const denied = await apiMiddleware({
     request: request("/api/auth/login", { method: "OPTIONS", origin: "https://evil.example" }),
