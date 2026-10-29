@@ -188,7 +188,7 @@ async function login(db, credentials = USER_A) {
   return loginHandler(context(request("/api/auth/login", { method: "POST", body: credentials }), db));
 }
 
-async function createAlias(db, cookie, name = "Private alias") {
+async function createAlias(db, cookie, name = "test-private-alias") {
   return aliasesHandler(context(request("/api/aliases", {
     method: "POST", cookie, body: { name, category: "achats" }
   }), db));
@@ -197,14 +197,14 @@ async function createAlias(db, cookie, name = "Private alias") {
 test("health endpoint verifies D1 connectivity and returns minimal public status", async () => {
   const response = await healthHandler(context(request("/api/health"), fakeDb()));
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { ok: true, service: "apa-api", database: "ok" });
+  assert.deepEqual(await response.json(), { ok: true, service: "apa-test-api", database: "ok" });
   assert.equal(response.headers.get("cache-control"), "no-store");
 });
 
 test("health endpoint fails closed when D1 is not configured", async () => {
   const response = await healthHandler({ request: request("/api/health"), env: {} });
   assert.equal(response.status, 503);
-  assert.deepEqual(await response.json(), { ok: false, service: "apa-api", database: "unavailable" });
+  assert.deepEqual(await response.json(), { ok: false, service: "apa-test-api", database: "unavailable" });
 });
 
 test("registration creates a user and a secure HttpOnly session cookie", async () => {
@@ -219,7 +219,7 @@ test("registration creates a user and a secure HttpOnly session cookie", async (
   const setCookie = response.headers.get("set-cookie") || "";
   assert.match(setCookie, /HttpOnly/i);
   assert.match(setCookie, /Secure/i);
-  assert.match(setCookie, /SameSite=Lax/i);
+  assert.match(setCookie, /SameSite=None/i);
   assert.match(setCookie, /Path=\//i);
   assert.match(setCookie, /Max-Age=604800/i);
   assert.equal(db.state.users.length, 1);
@@ -235,7 +235,7 @@ test("registration creates a user and a secure HttpOnly session cookie", async (
 test("registration rejects passwords shorter than ten characters", async () => {
   const response = await register(fakeDb(), { username: "test-alice", password: "short123" });
   assert.equal(response.status, 400);
-  assert.equal((await response.json()).fields.password, "must_be_10_to_128_characters");
+  assert.deepEqual(await response.json(), { error: "password_must_be_10_to_128_characters" });
 });
 
 test("registration normalizes usernames and rejects duplicate accounts", async () => {
@@ -251,8 +251,7 @@ test("registration normalizes usernames and rejects duplicate accounts", async (
 test("registration rejects malformed usernames and usernames without the test prefix", async () => {
   const response = await register(fakeDb(), { username: "ordinary-user", password: USER_A.password });
   assert.equal(response.status, 400);
-  assert.equal((await response.json()).fields.username,
-    "must_start_with_test_and_use_7_to_32_lowercase_letters_numbers_underscores_or_hyphens");
+  assert.deepEqual(await response.json(), { error: "test_username_required" });
 });
 
 test("login accepts the correct password and rotates the prior session", async () => {
@@ -345,7 +344,7 @@ test("user A cannot read user B aliases", async () => {
   const db = fakeDb();
   const a = cookieHeader(await register(db, USER_A));
   const b = cookieHeader(await register(db, USER_B));
-  const created = await createAlias(db, b, "Bob private alias");
+  const created = await createAlias(db, b, "test-bob-private-alias");
   assert.equal(created.status, 201);
   const response = await aliasesHandler(context(request("/api/aliases", { cookie: a }), db));
   assert.equal(response.status, 200);
@@ -357,7 +356,7 @@ test("user A cannot update or delete user B aliases", async () => {
   const db = fakeDb();
   const a = cookieHeader(await register(db, USER_A));
   const b = cookieHeader(await register(db, USER_B));
-  const created = await createAlias(db, b, "Bob private alias");
+  const created = await createAlias(db, b, "test-bob-private-alias");
   const alias = (await created.json()).alias;
   const patch = await aliasItemHandler(context(request("/api/aliases/" + alias.id, {
     method: "PATCH", cookie: a, body: { status: "paused" }
@@ -375,7 +374,7 @@ test("user A cannot update or delete user B aliases", async () => {
 test("authenticated owner can create and list only their own alias", async () => {
   const db = fakeDb();
   const cookie = cookieHeader(await register(db));
-  const created = await createAlias(db, cookie, "Book shop");
+  const created = await createAlias(db, cookie, "test-book-shop");
   assert.equal(created.status, 201);
   const alias = (await created.json()).alias;
   assert.equal(db.state.aliases[0].owner_id, db.state.users[0].id);
@@ -389,41 +388,41 @@ test("alias mutation rejects a foreign Origin", async () => {
   const cookie = cookieHeader(await register(db));
   const response = await aliasesHandler(context(request("/api/aliases", {
     method: "POST", cookie, origin: "https://evil.example",
-    body: { name: "Blocked", category: "achats" }
+    body: { name: "test-blocked", category: "achats" }
   }), db));
   assert.equal(response.status, 403);
   assert.equal(db.state.aliases.length, 0);
 });
 
 test("alias input trims names and defaults status", () => {
-  assert.deepEqual(validateAliasInput({ name: "  Livres  ", category: "achats" }), {
-    value: { name: "Livres", category: "achats", status: "planned" }
+  assert.deepEqual(validateAliasInput({ name: "  test-livres  ", category: "achats" }), {
+    value: { name: "test-livres", category: "achats", status: "planned" }
   });
 });
 
 test("alias input rejects empty, long, or invalid category", () => {
-  assert.equal(Boolean(validateAliasInput({ name: " ", category: "achats" }).errors), true);
-  assert.equal(Boolean(validateAliasInput({ name: "a".repeat(49), category: "achats" }).errors), true);
-  assert.equal(Boolean(validateAliasInput({ name: "Site", category: "other" }).errors), true);
+  assert.deepEqual(validateAliasInput({ name: " ", category: "achats" }), { error: "test_alias_name_required" });
+  assert.deepEqual(validateAliasInput({ name: "test-" + "a".repeat(43), category: "achats" }), { error: "test_alias_name_required" });
+  assert.deepEqual(validateAliasInput({ name: "test-site", category: "other" }), { error: "invalid_category" });
 });
 
 test("alias input rejects control characters including a NUL escape", () => {
   const nulCharacter = "shop" + String.fromCharCode(0) + "name";
   assert.equal(nulCharacter.charCodeAt(4), 0, "fixture must contain a real NUL control character");
-  assert.equal(Boolean(validateAliasInput({ name: nulCharacter, category: "achats" }).errors?.name), true);
+  assert.deepEqual(validateAliasInput({ name: nulCharacter, category: "achats" }), { error: "test_alias_name_required" });
   const controlCodes = [...Array.from({ length: 0x20 }, (_, code) => code), 0x7f];
   for (const code of controlCodes) {
     const result = validateAliasInput({
       name: "shop" + String.fromCharCode(code) + "name",
       category: "achats"
     });
-    assert.equal(Boolean(result.errors?.name), true, "Expected control code " + code + " to be rejected");
+    assert.deepEqual(result, { error: "test_alias_name_required" }, "Expected control code " + code + " to be rejected");
   }
 });
 
 test("status validator only accepts known statuses", () => {
-  assert.deepEqual(validateStatusInput({ status: "paused" }), { value: { status: "paused" } });
-  assert.equal(Boolean(validateStatusInput({ status: "deleted" }).errors), true);
+  assert.deepEqual(validateStatusInput({ status: "paused" }), { value: "paused" });
+  assert.deepEqual(validateStatusInput({ status: "deleted" }), { error: "invalid_status" });
 });
 
 test("internal labels are normalized and are not email addresses", () => {
@@ -631,4 +630,27 @@ test("alias creation stops at 25 aliases per synthetic test user", async () => {
   assert.equal(response.status, 429);
   assert.deepEqual(await response.json(), { error: "test_alias_limit_reached" });
   assert.equal(db.state.aliases.length, 25);
+});
+
+
+test("API middleware handles allowed local CORS preflight and credentials", async () => {
+  const preflight = await apiMiddleware({
+    request: request("/api/auth/login", {
+      method: "OPTIONS",
+      origin: "http://localhost:3000",
+      headers: { "access-control-request-method": "POST", "access-control-request-headers": "Content-Type" }
+    }),
+    next: async () => new Response("must not reach route")
+  });
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get("access-control-allow-origin"), "http://localhost:3000");
+  assert.equal(preflight.headers.get("access-control-allow-credentials"), "true");
+  assert.match(preflight.headers.get("access-control-allow-methods") || "", /PATCH/);
+
+  const denied = await apiMiddleware({
+    request: request("/api/auth/login", { method: "OPTIONS", origin: "https://evil.example" }),
+    next: async () => new Response("must not reach route")
+  });
+  assert.equal(denied.status, 403);
+  assert.deepEqual(await denied.json(), { error: "test_origin_not_allowed" });
 });
