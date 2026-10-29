@@ -48,7 +48,7 @@ function fakeDb() {
         bind(...values) { this.values = values; state.lastValues = values; return this; },
         async first() {
           const values = state.lastValues;
-          if (/FROM auth_login_limits WHERE key_hash = \\?/i.test(sql)) {
+          if (/FROM auth_login_limits WHERE key_hash = \?/i.test(sql)) {
             const row = state.loginLimits.find((item) => item.key_hash === values[0]);
             return row ? { blocked_until: row.blocked_until, window_started_at: row.window_started_at } : null;
           }
@@ -100,7 +100,7 @@ function fakeDb() {
             }
             return { meta: { changes: 1 } };
           }
-          if (/^DELETE FROM auth_login_limits WHERE key_hash = \\?/i.test(sql)) {
+          if (/^DELETE FROM auth_login_limits WHERE key_hash = \?/i.test(sql)) {
             const before = state.loginLimits.length;
             state.loginLimits = state.loginLimits.filter((item) => item.key_hash !== values[0]);
             return { meta: { changes: before - state.loginLimits.length } };
