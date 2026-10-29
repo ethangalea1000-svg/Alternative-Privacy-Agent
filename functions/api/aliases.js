@@ -1,5 +1,7 @@
 import {
   getDatabase,
+  isValidCategory,
+  isValidStatus,
   json,
   methodNotAllowed,
   newId,
@@ -30,10 +32,10 @@ export async function onRequest(context) {
     const limitValue = url.searchParams.get("limit");
     const limit = limitValue === null ? 50 : Number(limitValue);
 
-    if (category !== null && !["achats", "projets", "public", "personnel"].includes(category)) {
+    if (category !== null && !isValidCategory(category)) {
       return json({ error: "invalid_category" }, 400);
     }
-    if (status !== null && !["planned", "active", "paused"].includes(status)) {
+    if (status !== null && !isValidStatus(status)) {
       return json({ error: "invalid_status" }, 400);
     }
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
