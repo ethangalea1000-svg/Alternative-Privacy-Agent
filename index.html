@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'self'">
   <title>APA — Alternative Privacy Agent</title>
   <link rel="stylesheet" href="./styles.css">
-  <script src="./app.js" defer></script>
+  <script type="module" src="./app.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Aller au contenu</a>
@@ -46,7 +46,7 @@
 
       <section class="notice" aria-label="Limite du prototype">
         <span class="notice-icon" aria-hidden="true">i</span>
-        <p><strong>Prototype local :</strong> les alias créés ici sont des identifiants de classement, pas des adresses e-mail fonctionnelles. Aucun compte externe ni transfert d’e-mail n’est créé.</p>
+        <p><strong>Tableau de bord local :</strong> APA organise les alias que vous utilisez déjà, y compris ceux créés chez d’autres services. Les libellés sont des identifiants de classement, pas des adresses e-mail fonctionnelles. APA ne crée ni ne relaie d’adresses e-mail.</p>
       </section>
 
       <section class="stats-grid" aria-label="Résumé">
@@ -58,8 +58,8 @@
 
       <section id="aliases" class="aliases-section">
         <div class="section-heading">
-          <div><p class="eyebrow">VOTRE ORGANISATION</p><h2>Mes alias</h2><p class="section-copy">Un identifiant distinct pour chaque usage numérique.</p></div>
-          <button class="primary-button" id="open-create" type="button"><span aria-hidden="true">＋</span> Créer un alias</button>
+          <div><p class="eyebrow">VOTRE ORGANISATION</p><h2>Mes alias</h2><p class="section-copy">Un tableau de bord local pour organiser les alias créés chez vos services.</p></div>
+          <div class="section-actions"><button class="secondary-button" id="export-backup" type="button">Exporter JSON</button><button class="secondary-button" id="import-backup" type="button">Importer JSON</button><input id="backup-file" type="file" accept="application/json,.json" hidden><button class="primary-button" id="open-create" type="button"><span aria-hidden="true">＋</span> Ajouter un alias</button></div>
         </div>
         <div class="toolbar">
           <label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Rechercher un alias</span><input id="search" type="search" placeholder="Rechercher un alias…" autocomplete="off"></label>
@@ -86,14 +86,18 @@
   <dialog id="alias-dialog" class="alias-dialog" aria-labelledby="dialog-title">
     <form id="alias-form">
       <div class="dialog-heading"><div><p class="eyebrow">NOUVEL IDENTIFIANT</p><h2 id="dialog-title">Créer un alias</h2></div><button class="close-button" id="close-dialog" type="button" aria-label="Fermer">×</button></div>
-      <p class="dialog-copy">Choisissez un nom et un usage. APA génère un identifiant de classement local.</p>
+      <p class="dialog-copy">Organisez un alias déjà créé chez un service. APA ne crée pas d’adresse e-mail fonctionnelle.</p>
       <label class="field-label" for="alias-name">Nom de l’alias <span>Obligatoire</span></label>
       <input class="text-field" id="alias-name" name="alias-name" maxlength="48" placeholder="Ex. Boutique de livres" required>
       <label class="field-label" for="alias-category">Catégorie</label>
       <select class="text-field" id="alias-category" name="alias-category"><option value="achats">Achats</option><option value="projets">Projets</option><option value="public">Public</option><option value="personnel">Personnel</option></select>
-      <label class="field-label" for="alias-status">Statut initial</label>
+      <label class="field-label" for="alias-site">Où est-il utilisé ? <span>Facultatif</span></label>
+      <input class="text-field" id="alias-site" name="alias-site" maxlength="120" placeholder="Ex. Boutique, réseau social, service">
+      <label class="field-label" for="alias-notes">Notes <span>Facultatif</span></label>
+      <textarea class="text-field" id="alias-notes" name="alias-notes" maxlength="1000" rows="3" placeholder="Ex. Usage, date de création, raison du choix"></textarea>
+      <label class="field-label" for="alias-status">Statut</label>
       <select class="text-field" id="alias-status" name="alias-status"><option value="planned">À configurer</option><option value="active">Actif (suivi uniquement)</option><option value="paused">En pause</option></select>
-      <p class="field-hint">N’ajoutez pas de mot de passe, d’adresse personnelle ou d’autre donnée sensible.</p>
+      <p class="field-hint">Ne stockez aucun mot de passe ni donnée sensible. Les données restent dans ce navigateur.</p>
       <div class="dialog-actions"><button class="secondary-button" id="cancel-create" type="button">Annuler</button><button class="primary-button" type="submit">Créer l’identifiant</button></div>
       <p class="form-error" id="form-error" role="alert" hidden></p>
     </form>
