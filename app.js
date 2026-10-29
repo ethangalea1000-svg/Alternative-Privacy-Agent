@@ -1,4 +1,5 @@
 import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeImportedAliases, updateAlias, validateAlias } from "./prototype-store.js";
+import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdentity } from "./identity-store.js";
 
 (() => {
   "use strict";
@@ -35,9 +36,46 @@ import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeIm
     statusFilter: document.querySelector("#status-filter"),
     toast: document.querySelector("#toast")
   };
+  const identityElements = { form: document.querySelector("#identity-form"), pseudonym: document.querySelector("#identity-pseudonym"), bio: document.querySelector("#identity-bio"), github: document.querySelector("#identity-github"), website: document.querySelector("#identity-website"), error: document.querySelector("#identity-error"), githubLink: document.querySelector("#identity-github-link"), websiteLink: document.querySelector("#identity-website-link"), checklist: [...document.querySelectorAll("[data-identity-check]")] };
 
   let aliases = loadAliases();
+  let identity = loadIdentity();
   let toastTimeout;
+  function loadIdentity() {
+    try { return parseStoredIdentity(localStorage.getItem(IDENTITY_STORAGE_KEY)); }
+    catch { showToast("La fiche pseudonyme locale est illisible. Vérifiez vos données avant de la modifier."); return emptyIdentity(); }
+  }
+  function readIdentityForm() {
+    return { pseudonym: identityElements.pseudonym.value.trim(), bio: identityElements.bio.value.trim(),
+      githubUrl: identityElements.github.value.trim(), websiteUrl: identityElements.website.value.trim(),
+      checklist: Object.fromEntries(identityElements.checklist.map((input) => [input.dataset.identityCheck, input.checked])) };
+  }
+  function renderIdentityLinks() {
+    const setLink = (anchor, url, label) => {
+      const valid = url && url.startsWith("https://");
+      anchor.hidden = !valid;
+      if (valid) { anchor.href = url; anchor.textContent = label; anchor.target = "_blank"; anchor.rel = "noopener noreferrer"; }
+      else anchor.removeAttribute("href");
+    };
+    setLink(identityElements.githubLink, identity.githubUrl, "Ouvrir mon GitHub ↗");
+    setLink(identityElements.websiteLink, identity.websiteUrl, "Ouvrir mon site ↗");
+  }
+  function displayIdentity() {
+    identityElements.pseudonym.value = identity.pseudonym; identityElements.bio.value = identity.bio;
+    identityElements.github.value = identity.githubUrl; identityElements.website.value = identity.websiteUrl;
+    for (const input of identityElements.checklist) input.checked = identity.checklist[input.dataset.identityCheck] === true;
+    renderIdentityLinks();
+  }
+  function persistIdentity(nextIdentity, message = "Fiche pseudonyme enregistrée uniquement dans ce navigateur.") {
+    if (!validateIdentity(nextIdentity)) {
+      identityElements.error.textContent = "Vérifiez les champs : liens HTTPS, longueurs maximales et caractères autorisés.";
+      identityElements.error.hidden = false; return false;
+    }
+    try {
+      localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(nextIdentity));
+      identity = nextIdentity; identityElements.error.hidden = true; renderIdentityLinks(); showToast(message); return true;
+    } catch { showToast("Impossible d’enregistrer la fiche. Vérifiez l’espace disponible dans le navigateur."); return false; }
+  }
 
   function loadAliases() {
     try {
@@ -219,6 +257,12 @@ import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeIm
     showToast("Identifiant supprimé du stockage local.");
   }
 
+  identityElements.form.addEventListener("submit", (event) => { event.preventDefault(); persistIdentity(readIdentityForm()); });
+  for (const input of identityElements.checklist) {
+    input.addEventListener("change", () => persistIdentity(
+      { ...identity, checklist: { ...identity.checklist, [input.dataset.identityCheck]: input.checked } },
+      "Checklist de confidentialité mise à jour localement."));
+  }
   document.querySelector("#open-create").addEventListener("click", () => openDialog());
   elements.exportButton.addEventListener("click", () => {
     try {
@@ -318,5 +362,6 @@ import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeIm
     if (event.target === elements.dialog) closeDialog();
   });
 
+  displayIdentity();
   render();
 })();

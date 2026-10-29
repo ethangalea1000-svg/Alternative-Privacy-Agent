@@ -21,11 +21,12 @@
       <nav class="nav-list">
         <a class="nav-link is-active" href="#overview" aria-current="page"><span aria-hidden="true">◫</span> Tableau de bord</a>
         <a class="nav-link" href="#aliases"><span aria-hidden="true">⌁</span> Mes alias <span class="nav-count" id="nav-count">0</span></a>
+        <a class="nav-link" href="#identity"><span aria-hidden="true">✧</span> Mon pseudonyme</a>
         <a class="nav-link" href="#privacy"><span aria-hidden="true">◇</span> Confidentialité</a>
       </nav>
       <div class="sidebar-bottom">
         <div class="privacy-mini"><span class="privacy-dot"></span><div><strong>Stockage local</strong><small>Vos données restent ici</small></div></div>
-        <p class="sidebar-version">Prototype · 0.2.0</p>
+        <p class="sidebar-version">Prototype · 0.3.0</p>
       </div>
     </aside>
 
@@ -75,11 +76,39 @@
         </div>
       </section>
 
+      <section id="identity" class="identity-section">
+        <div class="section-heading"><div><p class="eyebrow">IDENTITÉ PUBLIQUE MAÎTRISÉE</p><h2>Mon pseudonyme</h2><p class="section-copy">Préparez une identité publique sobre, sans inventer d’attributs ni mélanger les espaces personnels et publics.</p></div></div>
+        <div class="identity-layout">
+          <form id="identity-form" class="identity-card">
+            <label class="field-label" for="identity-pseudonym">Nom de plume <span>Facultatif</span></label>
+            <input class="text-field" id="identity-pseudonym" name="pseudonym" maxlength="40" autocomplete="off" placeholder="Le pseudonyme que vous choisissez">
+            <label class="field-label" for="identity-bio">Bio discrète <span>Facultatif · 240 caractères</span></label>
+            <textarea class="text-field" id="identity-bio" name="bio" maxlength="240" rows="3" placeholder="Décrivez vos centres d’intérêt sans détails permettant de vous localiser ou vous identifier."></textarea>
+            <label class="field-label" for="identity-github">Lien GitHub <span>Facultatif</span></label>
+            <input class="text-field" id="identity-github" name="github" type="url" maxlength="200" autocomplete="url" placeholder="https://github.com/votre-pseudo">
+            <label class="field-label" for="identity-website">Lien vers votre site <span>Facultatif</span></label>
+            <input class="text-field" id="identity-website" name="website" type="url" maxlength="200" autocomplete="url" placeholder="https://votre-site.example">
+            <p class="field-hint">Tous les champs sont vides au départ : rien n’est prérempli ni généré. Enregistrement dans localStorage uniquement, sans compte ni synchronisation.</p>
+            <p class="form-error" id="identity-error" role="alert" hidden></p>
+            <button class="primary-button" type="submit">Enregistrer ma fiche</button>
+            <div class="identity-links" aria-live="polite"><a id="identity-github-link" href="#" hidden>Ouvrir mon GitHub ↗</a><a id="identity-website-link" href="#" hidden>Ouvrir mon site ↗</a></div>
+          </form>
+          <aside class="identity-card identity-checklist">
+            <p class="eyebrow">CHECKLIST D’HYGIÈNE NUMÉRIQUE</p><h3>Avant de publier</h3>
+            <label class="check-row"><input type="checkbox" data-identity-check="separate-real-name"><span>Ne pas associer publiquement ce pseudonyme à mon vrai nom.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="not-personal-accounts"><span>Ne pas réutiliser ce pseudonyme sur mes comptes personnels.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="no-identifying-details"><span>Ne jamais indiquer mon collège, ma ville ou mon âge exact.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="review-links"><span>Vérifier que mes liens publics ne révèlent pas d’informations privées.</span></label>
+            <p class="field-hint">Cette checklist aide à réfléchir : elle ne garantit pas l’anonymat. Un profil public peut être recoupé avec d’autres informations.</p>
+          </aside>
+        </div>
+      </section>
+
       <section id="privacy" class="privacy-section">
         <div class="privacy-section-icon" aria-hidden="true">◇</div>
         <div><h2>La confidentialité, par conception</h2><p>Dans cette version, les données sont conservées dans le stockage local de ce navigateur. Elles ne sont ni envoyées à un serveur ni synchronisées entre appareils. Effacer les données du navigateur peut les supprimer.</p></div>
       </section>
-      <footer class="page-footer"><span>APA · Prototype 0.2.0</span><span>Conçu pour une gestion plus claire de votre vie numérique.</span></footer>
+      <footer class="page-footer"><span>APA · Prototype 0.3.0</span><span>Conçu pour une gestion plus claire de votre vie numérique.</span></footer>
     </main>
   </div>
 

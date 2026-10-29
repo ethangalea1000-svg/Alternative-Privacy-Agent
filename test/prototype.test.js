@@ -47,10 +47,10 @@ test("prototype page connects the module and all requested controls", async () =
     readFile(new URL("../app.js", import.meta.url), "utf8")
   ]);
   assert.match(html, /<script type="module" src="\.\/app\.js"><\/script>/);
-  for (const id of ["alias-site", "alias-notes", "export-backup", "import-backup", "backup-file", "save-alias"]) {
+  for (const id of ["alias-site", "alias-notes", "export-backup", "import-backup", "backup-file", "save-alias", "identity-form", "identity-pseudonym", "identity-bio", "identity-github", "identity-website"]) {
     assert.match(html, new RegExp('id="' + id + '"'));
   }
-  for (const handler of ["parseBackup", "serializeAliases", "updateAlias", "mergeImportedAliases"]) {
+  for (const handler of ["parseBackup", "serializeAliases", "updateAlias", "mergeImportedAliases", "persistIdentity", "parseStoredIdentity"]) {
     assert.match(app, new RegExp("\\b" + handler + "\\b"));
   }
   assert.match(html, /identifiants de classement, pas des adresses e-mail fonctionnelles/i);
