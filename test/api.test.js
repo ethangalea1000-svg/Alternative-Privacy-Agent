@@ -49,8 +49,8 @@ function fakeDb() {
         async first() {
           const values = state.lastValues;
           if (/SELECT 1 AS ok/i.test(sql)) return { ok: 1 };
-          if (/SELECT COUNT\\(\\*\\) AS count FROM users/i.test(sql)) return { count: state.users.length };
-          if (/SELECT COUNT\\(\\*\\) AS count FROM aliases WHERE owner_id = \\?/i.test(sql)) {
+          if (/SELECT COUNT\(\*\) AS count FROM users/i.test(sql)) return { count: state.users.length };
+          if (/SELECT COUNT\(\*\) AS count FROM aliases WHERE owner_id = \?/i.test(sql)) {
             return { count: state.aliases.filter((item) => item.owner_id === values[0]).length };
           }
           if (/FROM auth_login_limits WHERE key_hash = \?/i.test(sql)) {
