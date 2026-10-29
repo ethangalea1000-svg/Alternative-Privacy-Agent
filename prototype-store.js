@@ -6,17 +6,19 @@ export const MAX_SITE_LENGTH = 120;
 export const MAX_NOTES_LENGTH = 1000;
 
 export function validateAlias(item) {
-  return Boolean(item && typeof item.id === "string" && item.id.length > 0 &&
+  if (!item || typeof item !== "object") return false;
+  const site = item.site ?? "";
+  const notes = item.notes ?? "";
+  return typeof item.id === "string" && item.id.length > 0 &&
     typeof item.name === "string" && item.name.trim().length > 0 &&
     item.name.length <= MAX_NAME_LENGTH &&
     typeof item.label === "string" && /^[a-z0-9-]{1,40}$/.test(item.label) &&
     CATEGORIES.includes(item.category) && STATUSES.includes(item.status) &&
     typeof item.createdAt === "string" && !Number.isNaN(Date.parse(item.createdAt)) &&
-    typeof (item.site ?? "") === "string" && item.site.length <= MAX_SITE_LENGTH &&
-    !/[\u0000-\u001f\u007f]/.test(item.site ?? "") &&
-    typeof (item.notes ?? "") === "string" && item.notes.length <= MAX_NOTES_LENGTH &&
-    !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(item.notes ?? ""));
-}
+    typeof site === "string" && site.length <= MAX_SITE_LENGTH &&
+    !/[\u0000-\u001f\u007f]/.test(site) &&
+    typeof notes === "string" && notes.length <= MAX_NOTES_LENGTH &&
+    !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(notes);
 
 export function normalizeAlias(item) {
   return {
