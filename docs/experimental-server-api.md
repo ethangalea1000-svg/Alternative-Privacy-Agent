@@ -151,7 +151,7 @@ La branche Pages Functions reste une implémentation versionnée qui partage les
 
 ## Limites restantes / critères avant toute évolution
 
-1. [x] Ajouter les tests locaux de non-régression demandés ; le job « Run tests » a réussi sur le dernier commit vérifié (les étapes de nettoyage GitHub Actions étaient encore en cours au moment de la vérification).
+1. [x] Tests locaux de non-régression : le job « Run tests » a réussi sur le commit de code `74e952b` (77 tests, 69 réussis, 0 échec, 8 tests distants ignorés).
 2. [x] Séparer les tests locaux, les tests SQLite en mémoire et la suite distante opt-in non destructive.
 3. [~] Contrats de validation, CORS, cookies, en-têtes et réponses alignés sur le Worker de référence fourni. Confirmer encore si les filtres de liste `category`, `status` et `limit` sont aussi présents dans le Worker avant de déclarer une parité complète de toutes les routes.
 4. [x] Réaliser et documenter une revue sécurité source-level ; ce n'est pas un test d'intrusion ni une validation production.
