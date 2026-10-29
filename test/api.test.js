@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { onRequest as aliasesHandler } from "../functions/api/aliases.js";
 import { onRequest as aliasItemHandler } from "../functions/api/aliases/[id].js";
-import { onRequestGet as healthHandler } from "../functions/api/health.js";
+import { onRequest as healthHandler } from "../functions/api/health.js";
 import {
   isValidId,
   newInternalLabel,
@@ -85,7 +85,7 @@ function fakeDb() {
 }
 
 test("health endpoint returns minimal public status", async () => {
-  const response = healthHandler();
+  const response = healthHandler({ request: request("/api/health") });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true, service: "apa-api" });
   assert.equal(response.headers.get("cache-control"), "no-store");
