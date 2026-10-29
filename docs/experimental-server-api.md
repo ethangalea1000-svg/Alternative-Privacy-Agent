@@ -151,7 +151,7 @@ La branche Pages Functions reste une implémentation versionnée qui partage les
 
 ## Limites restantes / critères avant toute évolution
 
-1. [x] Tests locaux de non-régression : le job « Run tests » a réussi sur le commit de code `74e952b` (77 tests, 69 réussis, 0 échec, 8 tests distants ignorés).
+1. [x] Tests locaux de non-régression : le job « Run tests » a réussi sur le commit de code `8299ecc` (78 tests, 70 réussis, 0 échec, 8 tests distants ignorés).
 2. [x] Séparer les tests locaux, les tests SQLite en mémoire et la suite distante opt-in non destructive.
 3. [x] Contrats connus de validation, CORS, cookies, en-têtes, réponses 405/404, filtres de liste et requêtes SQL rapprochés du Worker de référence. Le code du Worker n'est pas déployé ou modifié par cette étape ; la vérification distante et navigateur reste à faire.
 4. [x] Réaliser et documenter une revue sécurité source-level ; ce n'est pas un test d'intrusion ni une validation production.
