@@ -279,9 +279,24 @@ test("UUID validation rejects non-canonical UUID shapes", () => {
 });
 
 
-test("alias input rejects control characters", () => {
-  const result = validateAliasInput({ name: "shop\\u0000name", category: "achats" });
-  assert.equal(Boolean(result.errors?.name), true);
+test("alias input rejects every ASCII control character", () => {
+  const controlCodes = [
+    ...Array.from({ length: 0x20 }, (_, code) => code),
+    0x7f
+  ];
+
+  for (const code of controlCodes) {
+    const controlCharacter = String.fromCharCode(code);
+    const result = validateAliasInput({
+      name: "shop" + controlCharacter + "name",
+      category: "achats"
+    });
+    assert.equal(
+      Boolean(result.errors?.name),
+      true,
+      "Expected U+" + code.toString(16).toUpperCase().padStart(4, "0") + " to be rejected"
+    );
+  }
 });
 
 
