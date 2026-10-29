@@ -38,7 +38,7 @@ export async function requireApiToken(request, env) {
     return json({ error: "service_not_configured" }, 503);
   }
   if (!match || supplied.length < TOKEN_MIN_LENGTH || supplied.length > TOKEN_MAX_LENGTH ||
-      supplied.length !== expected.length || !(await constantTimeTokenMatch(supplied, expected))) {
+      !(await constantTimeTokenMatch(supplied, expected))) {
     return json({ error: "unauthorized" }, 401, { "www-authenticate": "Bearer" });
   }
   return null;
