@@ -14,6 +14,14 @@
 
 **Required action:** keep this value explicitly test-only. Do not infer that 100,000 iterations is production-approved or equivalent in security to 310,000.
 
+### P2 — Password verification accepts iteration counts above the observed Workers runtime ceiling
+
+**Evidence:** the Worker creates new records with 100,000 PBKDF2 iterations, but `verifyPassword` accepts stored iteration counts up to 1,000,000. The reported Workers Web Crypto runtime rejects counts above 100,000.
+
+**Impact:** if a stored row ever contains an iteration count above 100,000, login can throw during `deriveBits` and be returned as a generic `database_error` rather than a normal invalid-credentials response. The user reports that the failed v1 registration did not create a real account, so this is a latent compatibility edge case, not evidence of a current affected row.
+
+**Required action:** before the test database contains any such records, constrain verification to runtime-supported counts or define a deliberate migration/compatibility strategy. Keep this test-only and do not interpret it as production password-hashing approval.
+
 ### P2 — The test Worker is internet-reachable and must be treated as an exposed test surface
 
 **Evidence:** the Worker has a public `workers.dev` URL. The user reports that it is not connected to the public site and its D1 binding targets only `apa-test-db`.
