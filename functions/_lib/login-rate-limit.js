@@ -49,7 +49,7 @@ export async function recordLoginFailure(db, keys, now = Date.now()) {
       "window_started_at = CASE WHEN auth_login_limits.window_started_at < ? THEN excluded.window_started_at ELSE auth_login_limits.window_started_at END, " +
       "blocked_until = CASE WHEN (CASE WHEN auth_login_limits.window_started_at < ? THEN 1 ELSE auth_login_limits.failed_attempts + 1 END) >= ? THEN ? ELSE auth_login_limits.blocked_until END, " +
       "updated_at = excluded.updated_at"
-    ).bind(key, now, updatedAt, windowStartedAt, windowStartedAt, windowStartedAt, MAX_FAILURES, blockedUntil, updatedAt).run();
+    ).bind(key, now, updatedAt, windowStartedAt, windowStartedAt, windowStartedAt, MAX_FAILURES, blockedUntil).run();
   }
 }
 
