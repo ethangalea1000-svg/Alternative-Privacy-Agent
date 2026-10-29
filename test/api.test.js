@@ -48,6 +48,10 @@ function fakeDb() {
         bind(...values) { this.values = values; state.lastValues = values; return this; },
         async first() {
           const values = state.lastValues;
+          if (/FROM auth_login_limits WHERE key_hash = \\?/i.test(sql)) {
+            const row = state.loginLimits.find((item) => item.key_hash === values[0]);
+            return row ? { blocked_until: row.blocked_until, window_started_at: row.window_started_at } : null;
+          }
           if (/FROM users WHERE username = \?/i.test(sql)) {
             const user = state.users.find((item) => item.username.toLowerCase() === String(values[0]).toLowerCase());
             if (!user) return null;
