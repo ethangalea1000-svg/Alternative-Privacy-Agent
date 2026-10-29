@@ -40,10 +40,13 @@
       if (!Array.isArray(parsed)) return [];
       return parsed.filter((item) =>
         item && typeof item.id === "string" &&
-        typeof item.name === "string" &&
+        typeof item.name === "string" && item.name.trim().length > 0 &&
+        item.name.length <= 48 &&
+        typeof item.label === "string" && /^[a-z0-9-]{1,40}$/.test(item.label) &&
         Object.hasOwn(categories, item.category) &&
         Object.hasOwn(statuses, item.status) &&
-        typeof item.createdAt === "string"
+        typeof item.createdAt === "string" &&
+        !Number.isNaN(Date.parse(item.createdAt))
       );
     } catch {
       return [];
