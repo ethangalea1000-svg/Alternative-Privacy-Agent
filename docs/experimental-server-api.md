@@ -128,7 +128,7 @@ La branche a été ajustée côté code (sans déploiement) pour aligner les con
 
 - PBKDF2-SHA-256 à 100 000 itérations, marqué explicitement comme paramètre de test uniquement.
 - Noms d'utilisateur obligatoirement préfixés par `test-`.
-- Limite de 20 comptes synthétiques et de 25 alias par utilisateur.
+- Limite de 20 comptes synthétiques et de 25 alias par utilisateur (garde-fous test-only ; les contrôles par comptage ne sont pas atomiques face à des requêtes concurrentes).
 - Vérification de doublon et de plafond avant le calcul PBKDF2, afin d'éviter un coût inutile.
 - `GET /api/health` vérifie désormais réellement que `env.DB` répond à `SELECT 1` et renvoie l'état de la base.
 - Catégories, statuts, longueur de mot de passe, expiration des sessions et règle de limitation de connexion restent couverts par les tests locaux.
