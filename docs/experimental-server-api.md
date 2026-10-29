@@ -81,6 +81,18 @@ Node.js 20 ou plus récent :
 
 Les tests locaux doivent rester indépendants de Cloudflare et de la base distante. Ils ne doivent jamais exiger de secrets ou modifier une ressource Cloudflare.
 
+### Couverture automatisée ajoutée
+
+- `test/api.test.js` couvre maintenant aussi la conservation de l'alias legacy `owner_id IS NULL` (il reste présent mais invisible dans la liste de l'utilisateur connecté) et le rejet des cookies de session malformés sans requête D1.
+- `test/api-edge-cases.test.js` couvre déjà les validations, les origines refusées, les méthodes non prises en charge, les corps JSON invalides/trop volumineux, les en-têtes de sécurité et les erreurs génériques.
+- `test/remote-worker.test.js` est une suite **distante séparée et opt-in**. Elle ne crée ni utilisateur ni alias ; elle vérifie uniquement health/D1, session anonyme, origine refusée, JSON invalide, méthode non prise en charge, chemin inconnu, en-têtes et préflight CORS.
+- La suite distante est ignorée par défaut, notamment dans `npm test` et la CI publique. Pour la lancer manuellement depuis PowerShell, après avoir vérifié que le Worker est toujours le Worker de test autorisé :
+
+      $env:APA_RUN_REMOTE_TESTS = "1"
+      node --test test/remote-worker.test.js
+
+  Pour désigner une autre URL de test autorisée, définir au préalable `APA_TEST_API_BASE_URL`. Ne pas fournir de secrets. Ces tests distants sont non destructifs ; ils ne remplacent pas les scénarios authentifiés qui créent des données synthétiques et qui doivent rester exécutés manuellement avec un plan de nettoyage explicite.
+
 ## Tests D1 distants : périmètre et règles de sécurité
 
 **Cible autorisée : uniquement `apa-test-db`**, UUID `69016374-48e7-4220-bce8-ea490c9de1fa`, accessible au Worker de test par `env.DB`.
