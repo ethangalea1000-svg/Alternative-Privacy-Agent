@@ -38,9 +38,9 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
   };
   const identityElements = { form: document.querySelector("#identity-form"), pseudonym: document.querySelector("#identity-pseudonym"), bio: document.querySelector("#identity-bio"), github: document.querySelector("#identity-github"), website: document.querySelector("#identity-website"), error: document.querySelector("#identity-error"), githubLink: document.querySelector("#identity-github-link"), websiteLink: document.querySelector("#identity-website-link"), checklist: [...document.querySelectorAll("[data-identity-check]")] };
 
+  let toastTimeout;
   let aliases = loadAliases();
   let identity = loadIdentity();
-  let toastTimeout;
   function loadIdentity() {
     try { return parseStoredIdentity(localStorage.getItem(IDENTITY_STORAGE_KEY)); }
     catch { showToast("La fiche pseudonyme locale est illisible. Vérifiez vos données avant de la modifier."); return emptyIdentity(); }
