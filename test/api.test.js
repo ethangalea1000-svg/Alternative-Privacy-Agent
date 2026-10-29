@@ -277,3 +277,9 @@ test("UUID validation rejects non-canonical UUID shapes", () => {
   assert.equal(isValidId("00000000-0000-0000-0000-000000000001"), false);
   assert.equal(isValidId("00000000-0000-4000-0000-000000000001"), false);
 });
+
+
+test("alias input rejects control characters", () => {
+  const result = validateAliasInput({ name: "shop\\u0000name", category: "achats" });
+  assert.equal(Boolean(result.errors?.name), true);
+});
