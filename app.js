@@ -133,8 +133,9 @@ import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeIm
     const category = elements.categoryFilter.value;
     const status = elements.statusFilter.value;
     const filtered = aliases.filter((item) => {
-      const matchesQuery = item.name.toLocaleLowerCase("fr").includes(query) ||
-        item.label.toLocaleLowerCase("fr").includes(query);
+      const searchable = [item.name, item.label, item.site || "", item.notes || ""]
+        .join(" ").toLocaleLowerCase("fr");
+      const matchesQuery = searchable.includes(query);
       return matchesQuery &&
         (category === "all" || item.category === category) &&
         (status === "all" || item.status === status);
@@ -171,6 +172,7 @@ import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeIm
     elements.error.textContent = "";
     elements.form.reset();
     document.querySelector("#dialog-title").textContent = item ? "Modifier un alias" : "Ajouter un alias";
+    document.querySelector("#save-alias").textContent = item ? "Enregistrer les modifications" : "Ajouter l’alias";
     document.querySelector(".dialog-heading .eyebrow").textContent = item ? "MODIFIER L’ORGANISATION" : "NOUVEL IDENTIFIANT";
     elements.name.value = item?.name || "";
     elements.category.value = item?.category || "achats";
