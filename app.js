@@ -151,7 +151,8 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
 
   function createAliasCard(item) {
     const card = element("article", "alias-card");
-    const symbol = element("div", "alias-symbol");\n    symbol.append(svgIcon(categoryIcons[item.category]));
+    const symbol = element("div", "alias-symbol");
+    symbol.append(svgIcon(categoryIcons[item.category]));
     symbol.setAttribute("aria-hidden", "true");
     const main = element("div", "alias-main");
     const name = element("h3", "alias-name", item.name);
@@ -169,19 +170,22 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     date.setAttribute("aria-label", "Créé le " + formatDate(item.createdAt));
     const actions = element("div", "alias-actions");
 
-    const editButton = element("button", "icon-button");\n    editButton.append(svgIcon("edit"));
+    const editButton = element("button", "icon-button");
+    editButton.append(svgIcon("edit"));
     editButton.type = "button";
     editButton.title = "Modifier cet alias";
     editButton.setAttribute("aria-label", "Modifier " + item.name);
     editButton.addEventListener("click", () => openDialog(item));
 
-    const statusButton = element("button", "icon-button");\n    statusButton.append(svgIcon(item.status === "paused" ? "play" : "pause"));
+    const statusButton = element("button", "icon-button");
+    statusButton.append(svgIcon(item.status === "paused" ? "play" : "pause"));
     statusButton.type = "button";
     statusButton.title = item.status === "paused" ? "Réactiver le suivi" : "Mettre en pause";
     statusButton.setAttribute("aria-label", statusButton.title + " : " + item.name);
     statusButton.addEventListener("click", () => toggleStatus(item.id));
 
-    const deleteButton = element("button", "icon-button danger");\n    deleteButton.append(svgIcon("trash"));
+    const deleteButton = element("button", "icon-button danger");
+    deleteButton.append(svgIcon("trash"));
     deleteButton.type = "button";
     deleteButton.title = "Supprimer cet identifiant";
     deleteButton.setAttribute("aria-label", "Supprimer " + item.name);
