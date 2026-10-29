@@ -71,7 +71,7 @@ export function json(data, status = 200, extraHeaders = {}) {
 }
 
 export function methodNotAllowed(allowed) {
-  return json({ error: "method_not_allowed", allowed }, 405, { allow: allowed.join(", ") });
+  return json({ error: "method_not_allowed" }, 405, { allow: allowed.join(", ") });
 }
 
 export function isValidCategory(value) {
@@ -102,18 +102,19 @@ export async function readJsonObject(request) {
       return { error: json({ error: "invalid_content_length" }, 400) };
     }
     const length = Number(declaredLength);
-    if (!Number.isSafeInteger(length)) {
-      return { error: json({ error: "invalid_content_length" }, 400) };
-    }
     if (length > MAX_BODY_BYTES) {
       return { error: json({ error: "request_body_too_large" }, 413) };
     }
   }
 
+  if (!request.body) {
+    return { error: json({ error: "json_object_required" }, 400) };
+  }
+
   // Enforce the byte limit while reading, not after buffering an unbounded body.
   const chunks = [];
   let totalBytes = 0;
-  if (request.body) {
+  {
     const reader = request.body.getReader();
     try {
       while (true) {
@@ -140,16 +141,9 @@ export async function readJsonObject(request) {
     offset += chunk.byteLength;
   }
 
-  let text;
-  try {
-    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  } catch {
-    return { error: json({ error: "invalid_request_body_encoding" }, 400) };
-  }
-
   let value;
   try {
-    value = JSON.parse(text);
+    value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
   } catch {
     return { error: json({ error: "invalid_json" }, 400) };
   }
