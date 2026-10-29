@@ -283,3 +283,28 @@ test("alias input rejects control characters", () => {
   const result = validateAliasInput({ name: "shop\\u0000name", category: "achats" });
   assert.equal(Boolean(result.errors?.name), true);
 });
+
+
+test("only known alias uniqueness collisions return conflict status", async () => {
+  const makeDb = (message) => ({
+    prepare() {
+      return {
+        bind() { return this; },
+        async run() { throw new Error(message); }
+      };
+    }
+  });
+  const body = { name: "Conflict test", category: "achats" };
+
+  const duplicate = await aliasesHandler(context(request("/api/aliases", {
+    method: "POST", body
+  }), { db: makeDb("UNIQUE constraint failed: aliases.label") }));
+  assert.equal(duplicate.status, 409);
+  assert.deepEqual(await duplicate.json(), { error: "alias_conflict_retry" });
+
+  const checkFailure = await aliasesHandler(context(request("/api/aliases", {
+    method: "POST", body
+  }), { db: makeDb("CHECK constraint failed: aliases.name") }));
+  assert.equal(checkFailure.status, 500);
+  assert.deepEqual(await checkFailure.json(), { error: "database_error" });
+});
