@@ -49,6 +49,10 @@ function fakeDb() {
         async first() {
           const values = state.lastValues;
           if (/SELECT 1 AS ok/i.test(sql)) return { ok: 1 };
+          if (/SELECT COUNT\\(\\*\\) AS count FROM users/i.test(sql)) return { count: state.users.length };
+          if (/SELECT COUNT\\(\\*\\) AS count FROM aliases WHERE owner_id = \\?/i.test(sql)) {
+            return { count: state.aliases.filter((item) => item.owner_id === values[0]).length };
+          }
           if (/FROM auth_login_limits WHERE key_hash = \?/i.test(sql)) {
             const row = state.loginLimits.find((item) => item.key_hash === values[0]);
             return row ? { blocked_until: row.blocked_until, window_started_at: row.window_started_at } : null;
@@ -589,4 +593,42 @@ test("test-branch password records use the documented Workers-compatible test se
   assert.equal(record.password_iterations, 100_000);
   assert.match(record.password_hash, /^[a-f0-9]{64}$/);
   assert.match(record.password_salt, /^[a-f0-9]{32}$/);
+});
+
+
+test("registration stops at the 20-account synthetic test cap", async () => {
+  const db = fakeDb();
+  db.state.users = Array.from({ length: 20 }, (_, index) => ({
+    id: "user-" + index,
+    username: "test-fixture-" + index,
+    password_hash: "a".repeat(64),
+    password_salt: "b".repeat(32),
+    password_iterations: 100_000,
+    created_at: new Date(0).toISOString()
+  }));
+  const response = await register(db, { username: "test-new-user", password: USER_A.password });
+  assert.equal(response.status, 429);
+  assert.deepEqual(await response.json(), { error: "test_user_limit_reached" });
+  assert.equal(db.state.users.length, 20);
+  assert.equal(db.state.sessions.length, 0);
+});
+
+test("alias creation stops at 25 aliases per synthetic test user", async () => {
+  const db = fakeDb();
+  const cookie = cookieHeader(await register(db));
+  const ownerId = db.state.users[0].id;
+  db.state.aliases = Array.from({ length: 25 }, (_, index) => ({
+    id: "alias-" + index,
+    name: "Fixture " + index,
+    label: "fixture-" + index,
+    category: "public",
+    status: "active",
+    created_at: new Date(0).toISOString(),
+    updated_at: new Date(0).toISOString(),
+    owner_id: ownerId
+  }));
+  const response = await createAlias(db, cookie, "New synthetic alias");
+  assert.equal(response.status, 429);
+  assert.deepEqual(await response.json(), { error: "test_alias_limit_reached" });
+  assert.equal(db.state.aliases.length, 25);
 });
