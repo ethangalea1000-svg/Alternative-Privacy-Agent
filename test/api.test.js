@@ -400,9 +400,12 @@ test("JSON parser rejects wrong content type, malformed JSON, and arrays", async
 });
 
 test("JSON parser rejects invalid UTF-8 and oversized request bodies", async () => {
-  const invalidUtf8 = await readJsonObject(request("/api/aliases", {
-    method: "POST", body: new Uint8Array([0xc3, 0x28])
-  }));
+  const invalidUtf8Request = new Request(ORIGIN + "/api/aliases", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: new Uint8Array([0xc3, 0x28])
+  });
+  const invalidUtf8 = await readJsonObject(invalidUtf8Request);
   assert.equal(invalidUtf8.error.status, 400);
   assert.equal((await invalidUtf8.error.json()).error, "invalid_request_body_encoding");
   const oversized = await readJsonObject(request("/api/aliases", {
@@ -425,7 +428,9 @@ test("database failures return generic errors without exposing internals", async
   const db = {
     prepare() { throw new Error("private SQL and connection details"); }
   };
-  const response = await aliasesHandler(context(request("/api/aliases"), db));
+  const response = await aliasesHandler(context(request("/api/aliases", {
+    cookie: SESSION_COOKIE + "=" + "a".repeat(64)
+  }), db));
   assert.equal(response.status, 500);
   assert.deepEqual(await response.json(), { error: "database_error" });
 });
