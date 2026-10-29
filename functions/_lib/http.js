@@ -139,8 +139,8 @@ export async function readJsonObject(request) {
 
 export function validateAliasInput(value) {
   const errors = {};
-  if (typeof value.name !== "string" || value.name.trim().length < 1 || value.name.trim().length > 48) {
-    errors.name = "must_be_1_to_48_characters";
+  if (typeof value.name !== "string" || value.name.trim().length < 1 || value.name.trim().length > 48 || /[\u0000-\u001f\u007f]/u.test(value.name)) {
+    errors.name = "must_be_1_to_48_printable_characters";
   }
   if (!isValidCategory(value.category)) {
     errors.category = "invalid_category";
