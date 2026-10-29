@@ -1,0 +1,145 @@
+const CATEGORIES = new Set(["achats", "projets", "public", "personnel"]);
+const STATUSES = new Set(["planned", "active", "paused"]);
+const MAX_BODY_BYTES = 4096;
+const TOKEN_MIN_LENGTH = 32;
+
+export function json(data, status = 200, extraHeaders = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "no-referrer",
+      ...extraHeaders
+    }
+  });
+}
+
+export function methodNotAllowed(allowed) {
+  return json({ error: "method_not_allowed", allowed }, 405, { allow: allowed.join(", ") });
+}
+
+export async function requireApiToken(request, env) {
+  const expected = typeof env?.APA_API_TOKEN === "string" ? env.APA_API_TOKEN : "";
+  const authorization = request.headers.get("authorization") || "";
+  const match = /^Bearer ([^\s]+)$/.exec(authorization);
+  const supplied = match?.[1] || "";
+
+  // Fail closed if no sufficiently strong secret has been configured.
+  if (expected.length < TOKEN_MIN_LENGTH) {
+    return json({ error: "service_not_configured" }, 503);
+  }
+  if (!match || supplied.length < TOKEN_MIN_LENGTH || !(await constantTimeTokenMatch(supplied, expected))) {
+    return json({ error: "unauthorized" }, 401, { "www-authenticate": "Bearer" });
+  }
+  return null;
+}
+
+async function constantTimeTokenMatch(left, right) {
+  const encoder = new TextEncoder();
+  const [a, b] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(left)),
+    crypto.subtle.digest("SHA-256", encoder.encode(right))
+  ]);
+  const first = new Uint8Array(a);
+  const second = new Uint8Array(b);
+  let difference = 0;
+  for (let index = 0; index < first.length; index += 1) {
+    difference |= first[index] ^ second[index];
+  }
+  return difference === 0 && left.length === right.length;
+}
+
+export function isValidCategory(value) {
+  return typeof value === "string" && CATEGORIES.has(value);
+}
+
+export function isValidStatus(value) {
+  return typeof value === "string" && STATUSES.has(value);
+}
+
+export async function readJsonObject(request) {
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return { error: json({ error: "content_type_must_be_application_json" }, 415) };
+  }
+
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > MAX_BODY_BYTES) {
+    return { error: json({ error: "request_body_too_large" }, 413) };
+  }
+
+  let text;
+  try {
+    text = await request.text();
+  } catch {
+    return { error: json({ error: "invalid_request_body" }, 400) };
+  }
+
+  if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
+    return { error: json({ error: "request_body_too_large" }, 413) };
+  }
+
+  let value;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return { error: json({ error: "invalid_json" }, 400) };
+  }
+
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { error: json({ error: "json_object_required" }, 400) };
+  }
+  return { value };
+}
+
+export function validateAliasInput(value) {
+  const errors = {};
+  if (typeof value.name !== "string" || value.name.trim().length < 1 || value.name.trim().length > 48) {
+    errors.name = "must_be_1_to_48_characters";
+  }
+  if (!isValidCategory(value.category)) {
+    errors.category = "invalid_category";
+  }
+  if (value.status !== undefined && !isValidStatus(value.status)) {
+    errors.status = "invalid_status";
+  }
+  if (Object.keys(errors).length) return { errors };
+  return {
+    value: {
+      name: value.name.trim(),
+      category: value.category,
+      status: value.status || "planned"
+    }
+  };
+}
+
+export function validateStatusInput(value) {
+  if (!isValidStatus(value.status)) return { errors: { status: "invalid_status" } };
+  return { value: { status: value.status } };
+}
+
+export function getDatabase(env) {
+  if (!env?.DB || typeof env.DB.prepare !== "function") return null;
+  return env.DB;
+}
+
+export function newId() {
+  return crypto.randomUUID();
+}
+
+export function newInternalLabel(name) {
+  const slug = name.normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 30) || "alias";
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  return slug + "-" + suffix;
+}
+
+export function isValidId(value) {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(value) && value.length === 36;
+}
