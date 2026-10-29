@@ -187,7 +187,7 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     const deleteButton = element("button", "icon-button danger");
     deleteButton.append(svgIcon("trash"));
     deleteButton.type = "button";
-    deleteButton.title = "Supprimer cet identifiant";
+    deleteButton.title = "Supprimer cet alias";
     deleteButton.setAttribute("aria-label", "Supprimer " + item.name);
     deleteButton.addEventListener("click", () => deleteAlias(item.id));
 
@@ -214,7 +214,7 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     const noAliases = aliases.length === 0;
     elements.empty.querySelector("h3").textContent = noAliases ? "Aucun alias pour le moment" : "Aucun résultat";
     elements.empty.querySelector("p").textContent = noAliases
-      ? "Créez votre premier identifiant pour commencer à organiser vos usages."
+      ? "Ajoutez votre premier alias pour commencer."
       : "Essayez une autre recherche ou modifiez les filtres.";
     elements.empty.querySelector("button").hidden = !noAliases;
 
@@ -241,7 +241,7 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     elements.form.reset();
     document.querySelector("#dialog-title").textContent = item ? "Modifier un alias" : "Ajouter un alias";
     document.querySelector("#save-alias").textContent = item ? "Enregistrer les modifications" : "Ajouter l’alias";
-    document.querySelector(".dialog-heading .eyebrow").textContent = item ? "MODIFIER L’ORGANISATION" : "NOUVEL IDENTIFIANT";
+    document.querySelector(".dialog-heading .eyebrow").textContent = item ? "MODIFIER L’ALIAS" : "NOUVEL ALIAS";
     elements.name.value = item?.name || "";
     elements.category.value = item?.category || "achats";
     elements.status.value = item?.status || "planned";
@@ -269,13 +269,13 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
       return;
     }
     render();
-    showToast(item.status === "paused" ? "Identifiant mis en pause." : "Suivi réactivé.");
+    showToast(item.status === "paused" ? "Alias mis en pause." : "Suivi de l’alias réactivé.");
   }
 
   function deleteAlias(id) {
     const item = aliases.find((alias) => alias.id === id);
     if (!item) return;
-    const confirmed = window.confirm("Supprimer l’identifiant « " + item.name + " » de ce navigateur ? Cette action est irréversible.");
+    const confirmed = window.confirm("Supprimer l’alias « " + item.name + " » de ce navigateur ? Cette action est irréversible.");
     if (!confirmed) return;
     const previous = aliases;
     aliases = aliases.filter((alias) => alias.id !== id);

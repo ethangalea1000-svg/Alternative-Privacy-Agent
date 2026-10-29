@@ -20,3 +20,6 @@
 .identity-links a{display:inline-flex;align-items:center;gap:6px}
 .identity-links .icon-svg{width:14px;height:14px}
 .icon-button .icon-svg,.close-button .icon-svg,.primary-button .icon-svg{width:16px;height:16px}
+
+/* Keep the grouped product-scope note readable when it contains a heading and text. */
+.notice>div{min-width:0}.notice>div>p{margin:4px 0 0}

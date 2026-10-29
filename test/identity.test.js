@@ -29,7 +29,7 @@ test("profile UI has hygiene checks and no network write", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const app = await readFile(new URL("../app.js", import.meta.url), "utf8");
   assert.match(html, /id="identity-form"/);
-  assert.match(html, /Ne pas publier de détails personnels précis : lieu fréquenté, ville ou âge exact/);
+  assert.match(html, /Ne publiez pas de détails personnels précis : établissement ou lieu fréquenté, ville ou âge exact/);
   assert.match(html, /rien n’est prérempli ni généré/i);
   assert.match(app, /localStorage\.setItem\(IDENTITY_STORAGE_KEY/);
   assert.doesNotMatch(app, /fetch\(/);
