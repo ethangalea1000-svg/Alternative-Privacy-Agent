@@ -1,8 +1,6 @@
 const CATEGORIES = new Set(["achats", "projets", "public", "personnel"]);
 const STATUSES = new Set(["planned", "active", "paused"]);
 const MAX_BODY_BYTES = 4096;
-const TOKEN_MIN_LENGTH = 32;
-const TOKEN_MAX_LENGTH = 512;
 
 export function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -25,38 +23,6 @@ export function json(data, status = 200, extraHeaders = {}) {
 
 export function methodNotAllowed(allowed) {
   return json({ error: "method_not_allowed", allowed }, 405, { allow: allowed.join(", ") });
-}
-
-export async function requireApiToken(request, env) {
-  const expected = typeof env?.APA_API_TOKEN === "string" ? env.APA_API_TOKEN : "";
-  const authorization = request.headers.get("authorization") || "";
-  const match = /^Bearer ([^\s]+)$/.exec(authorization);
-  const supplied = match?.[1] || "";
-
-  // Fail closed when the deployment secret is missing, weak, or unreasonably large.
-  if (expected.length < TOKEN_MIN_LENGTH || expected.length > TOKEN_MAX_LENGTH) {
-    return json({ error: "service_not_configured" }, 503);
-  }
-  if (!match || supplied.length < TOKEN_MIN_LENGTH || supplied.length > TOKEN_MAX_LENGTH ||
-      !(await constantTimeTokenMatch(supplied, expected))) {
-    return json({ error: "unauthorized" }, 401, { "www-authenticate": "Bearer" });
-  }
-  return null;
-}
-
-async function constantTimeTokenMatch(left, right) {
-  const encoder = new TextEncoder();
-  const [a, b] = await Promise.all([
-    crypto.subtle.digest("SHA-256", encoder.encode(left)),
-    crypto.subtle.digest("SHA-256", encoder.encode(right))
-  ]);
-  const first = new Uint8Array(a);
-  const second = new Uint8Array(b);
-  let difference = 0;
-  for (let index = 0; index < first.length; index += 1) {
-    difference |= first[index] ^ second[index];
-  }
-  return difference === 0 && left.length === right.length;
 }
 
 export function isValidCategory(value) {
