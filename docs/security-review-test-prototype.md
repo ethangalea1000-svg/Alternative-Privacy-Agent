@@ -6,13 +6,13 @@
 
 ## Findings
 
-### P1 — Worker runtime compatibility is not yet reconciled with the branch
+### P1 — Worker runtime compatibility: branch setting aligned; runtime still needs independent verification
 
-**Evidence:** `functions/_lib/auth.js` still sets `PBKDF2_ITERATIONS = 310_000`. Both registration (`createPasswordRecord`) and the fallback derivation for an unknown/malformed user can invoke this iteration count. The reported deployed Worker rejected 310,000 iterations because WebCrypto in that runtime supports at most 100,000.
+**Evidence:** the branch originally used `PBKDF2_ITERATIONS = 310_000`, matching the reported failure. The reconciliation commit changed the *test branch only* to 100,000 iterations, added a regression assertion for the stored count, and added a test-only comment. The deployed Worker test report says the same setting fixed registration/login.
 
-**Impact:** the branch implementation is not equivalent to the tested Worker. In a compatible-looking deployment, registration and some login paths may fail before reaching the expected API response.
+**Impact:** the source-level mismatch is addressed in the branch, but the assistant did not independently deploy or run the remote suite. Runtime behavior must still be confirmed with the opt-in remote test and the exact deployed source.
 
-**Required action:** during the explicit Worker/branch reconciliation step, align the *test branch only* with the verified 100,000-iteration test setting, add a regression assertion for the stored iteration count, and clearly mark it as test-only. Do not infer that 100,000 iterations is production-approved.
+**Required action:** keep this value explicitly test-only. Do not infer that 100,000 iterations is production-approved or equivalent in security to 310,000.
 
 ### P2 — The test Worker is internet-reachable and must be treated as an exposed test surface
 
@@ -22,13 +22,13 @@
 
 **Required action:** keep synthetic data only, monitor usage, avoid real credentials, and disable the Worker when no longer needed. Do not connect the public UI or any production database.
 
-### P2 — Registration can be an expensive unauthenticated operation
+### P2 — Registration still needs an abuse-control review
 
-**Evidence:** in the branch, `createPasswordRecord(password)` is performed before the `try` block and before checking whether the username already exists. Registration has input validation but no equivalent of the login rate-limit buckets in the inspected handler.
+**Evidence:** the branch now checks duplicate usernames and a 20-user cap before PBKDF2, and caps each user's aliases at 25. It also requires usernames to begin with `test-`. Registration still has no dedicated per-IP rate limit, and the branch cap counts all users in its bound database.
 
-**Impact:** repeated registration attempts, including attempts with duplicate usernames, can consume CPU in password derivation and may produce uncaught runtime errors on incompatible runtimes.
+**Impact:** the checks reduce accidental test-data growth and avoid expensive derivation for duplicate/full-cap requests, but a public endpoint can still receive repeated unique test registrations up to the cap and consume CPU.
 
-**Required action:** before any broader exposure, validate runtime compatibility, consider throttling registration, and avoid doing expensive derivation before cheap duplicate checks where race-safe handling permits. Keep any test-only restriction separate from a production policy decision.
+**Required action:** keep the Worker isolated and synthetic-only. Before any broader exposure, review registration throttling and abuse monitoring. Do not treat test-only caps as production account policy.
 
 ### P2 — Lockout policy permits username-bucket denial of service
 
