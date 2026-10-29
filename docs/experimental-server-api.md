@@ -146,7 +146,7 @@ Ces différences de CORS/cookies sont liées à la topologie d'exécution et ne 
 
 ## Limites restantes / critères avant toute évolution
 
-1. [x] Ajouter les tests locaux de non-régression demandés ; le statut final CI est encore à confirmer après les derniers commits.
+1. [x] Ajouter les tests locaux de non-régression demandés ; le job « Run tests » a réussi sur le dernier commit vérifié (les étapes de nettoyage GitHub Actions étaient encore en cours au moment de la vérification).
 2. [x] Séparer les tests locaux, les tests SQLite en mémoire et la suite distante opt-in non destructive.
 3. [~] Aligner les règles connues Worker/branche (PBKDF2 de test, préfixe `test-`, plafonds, health avec contrôle D1). La comparaison exacte du source déployé reste impossible tant que le code collé dans le dashboard n'est pas versionné ; les différences CORS/cookies sont documentées.
 4. [x] Réaliser et documenter une revue sécurité source-level ; ce n'est pas un test d'intrusion ni une validation production.
