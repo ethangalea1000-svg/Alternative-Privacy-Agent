@@ -30,6 +30,14 @@
 
 **Required action:** keep the Worker isolated and synthetic-only. Before any broader exposure, review registration throttling and abuse monitoring. Do not treat test-only caps as production account policy.
 
+### P3 — Test-only account and alias caps are not concurrency-atomic
+
+**Evidence:** the 20-user and 25-alias limits are checked with `COUNT(*)` before the corresponding insert; the check and insert are not wrapped in a transaction.
+
+**Impact:** simultaneous requests could both pass a cap check and exceed the intended limit by a small amount. This is acceptable only as a test-data guardrail, not as a strict quota.
+
+**Required action:** do not rely on these caps as a production abuse control. If strict quotas are ever needed, implement a concurrency-safe design and test it against the target runtime.
+
 ### P2 — Lockout policy permits username-bucket denial of service
 
 **Evidence:** login throttling uses both a hashed client-IP bucket and a hashed username bucket; 10 failures trigger a 15-minute block. The user confirmed the correct password is also blocked during that window.
