@@ -67,6 +67,14 @@ export function isValidStatus(value) {
   return typeof value === "string" && STATUSES.has(value);
 }
 
+function hasControlCharacters(value) {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code <= 0x1f || code === 0x7f) return true;
+  }
+  return false;
+}
+
 export async function readJsonObject(request) {
   const contentType = (request.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
   if (contentType !== "application/json") {
@@ -139,7 +147,7 @@ export async function readJsonObject(request) {
 
 export function validateAliasInput(value) {
   const errors = {};
-  if (typeof value.name !== "string" || value.name.trim().length < 1 || value.name.trim().length > 48 || /[\u0000-\u001f\u007f]/u.test(value.name)) {
+  if (typeof value.name !== "string" || value.name.trim().length < 1 || value.name.trim().length > 48 || hasControlCharacters(value.name)) {
     errors.name = "must_be_1_to_48_printable_characters";
   }
   if (!isValidCategory(value.category)) {
