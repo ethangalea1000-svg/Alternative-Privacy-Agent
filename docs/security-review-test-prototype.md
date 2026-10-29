@@ -46,7 +46,7 @@
 
 **Required action:** retain as a documented prototype trade-off. Before production, review account lockout, recovery, monitoring and abuse controls; do not remove the limit without a replacement control.
 
-### P2 — Cross-origin browser behavior is not identical between the two implementations
+### P2 — Cross-origin cookies expand the test surface and require CSRF review
 
 **Evidence:** the branch has now been changed to match the test Worker’s development-origin allowlist, CORS credential headers, and `SameSite=None` cookie attributes. This makes local cross-origin browser testing possible; the allowlist still does not protect against non-browser callers.
 
