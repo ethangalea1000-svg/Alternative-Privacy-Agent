@@ -2,6 +2,7 @@ import { json, methodNotAllowed, readJsonObject } from "../../_lib/http.js";
 import {
   createSession, publicUser, sameOriginError, validateCredentials, verifyPassword
 } from "../../_lib/auth.js";
+import { clearLoginFailures, loginRateLimitStatus, recordLoginFailure } from "../../_lib/login-rate-limit.js";
 
 export async function onRequest(context) {
   const { request, env } = context;
