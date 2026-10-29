@@ -1,5 +1,4 @@
 import {
-  getDatabase,
   isValidCategory,
   isValidStatus,
   json,
@@ -7,23 +6,25 @@ import {
   newId,
   newInternalLabel,
   readJsonObject,
-  requireApiToken,
   validateAliasInput
 } from "../_lib/http.js";
+import { requireSession, sameOriginError } from "../_lib/auth.js";
 
 const SELECT_FIELDS = "id, name, label, category, status, created_at, updated_at";
 
 export async function onRequest(context) {
-  const { request, env } = context;
+  const { request } = context;
   if (!["GET", "POST"].includes(request.method)) {
     return methodNotAllowed(["GET", "POST"]);
   }
 
-  const authError = await requireApiToken(request, env);
-  if (authError) return authError;
-
-  const db = getDatabase(env);
-  if (!db) return json({ error: "database_not_configured" }, 503);
+  if (request.method === "POST") {
+    const originError = sameOriginError(request);
+    if (originError) return originError;
+  }
+  const session = await requireSession(request, context.env);
+  if (session.error) return session.error;
+  const { db, user } = session;
 
   if (request.method === "GET") {
     const url = new URL(request.url);
@@ -42,9 +43,8 @@ export async function onRequest(context) {
       return json({ error: "invalid_limit", allowed: "1..100" }, 400);
     }
 
-    let sql = "SELECT " + SELECT_FIELDS + " FROM aliases";
-    const conditions = [];
-    const values = [];
+    const conditions = ["owner_id = ?"];
+    const values = [user.id];
     if (category !== null) {
       conditions.push("category = ?");
       values.push(category);
@@ -53,13 +53,12 @@ export async function onRequest(context) {
       conditions.push("status = ?");
       values.push(status);
     }
-    if (conditions.length) sql += " WHERE " + conditions.join(" AND ");
-    sql += " ORDER BY created_at DESC LIMIT ?";
     values.push(limit);
+    const sql = "SELECT " + SELECT_FIELDS + " FROM aliases WHERE " +
+      conditions.join(" AND ") + " ORDER BY created_at DESC LIMIT ?";
 
     try {
-      const statement = db.prepare(sql).bind(...values);
-      const result = await statement.all();
+      const result = await db.prepare(sql).bind(...values).all();
       return json({ aliases: result.results || [] });
     } catch {
       return json({ error: "database_error" }, 500);
@@ -77,8 +76,9 @@ export async function onRequest(context) {
 
   try {
     await db.prepare(
-      "INSERT INTO aliases (id, name, label, category, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-    ).bind(id, validated.value.name, label, validated.value.category, validated.value.status, now, now).run();
+      "INSERT INTO aliases (id, name, label, category, status, created_at, updated_at, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(id, validated.value.name, label, validated.value.category, validated.value.status,
+      now, now, user.id).run();
 
     return json({
       alias: {
@@ -92,7 +92,6 @@ export async function onRequest(context) {
       }
     }, 201);
   } catch (error) {
-    // A collision is rare, but never return SQL errors or details to clients.
     const message = String(error?.message || "");
     if (/UNIQUE constraint failed: aliases\.(?:label|id)\b/i.test(message)) {
       return json({ error: "alias_conflict_retry" }, 409);
