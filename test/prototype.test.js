@@ -53,5 +53,5 @@ test("prototype page connects the module and all requested controls", async () =
   for (const handler of ["parseBackup", "serializeAliases", "updateAlias", "mergeImportedAliases", "persistIdentity", "parseStoredIdentity"]) {
     assert.match(app, new RegExp("\\b" + handler + "\\b"));
   }
-  assert.match(html, /identifiants de classement, pas des adresses e-mail fonctionnelles/i);
+  assert.match(html, /Les noms enregistrés ici servent au classement : ce ne sont pas des adresses e-mail fonctionnelles/i);
 });
