@@ -1,24 +1,23 @@
 import {
-  getDatabase,
   isValidId,
   json,
   methodNotAllowed,
   readJsonObject,
-  requireApiToken,
   validateStatusInput
 } from "../../_lib/http.js";
+import { requireSession, sameOriginError } from "../../_lib/auth.js";
 
 export async function onRequest(context) {
-  const { request, env, params } = context;
+  const { request, params } = context;
   if (!["PATCH", "DELETE"].includes(request.method)) {
     return methodNotAllowed(["PATCH", "DELETE"]);
   }
+  const originError = sameOriginError(request);
+  if (originError) return originError;
 
-  const authError = await requireApiToken(request, env);
-  if (authError) return authError;
-
-  const db = getDatabase(env);
-  if (!db) return json({ error: "database_not_configured" }, 503);
+  const session = await requireSession(request, context.env);
+  if (session.error) return session.error;
+  const { db, user } = session;
 
   const id = params?.id;
   if (!isValidId(id)) return json({ error: "invalid_alias_id" }, 400);
@@ -32,8 +31,8 @@ export async function onRequest(context) {
     const now = new Date().toISOString();
     try {
       const result = await db.prepare(
-        "UPDATE aliases SET status = ?, updated_at = ? WHERE id = ?"
-      ).bind(validated.value.status, now, id).run();
+        "UPDATE aliases SET status = ?, updated_at = ? WHERE id = ? AND owner_id = ?"
+      ).bind(validated.value.status, now, id, user.id).run();
       if (!result.meta || result.meta.changes === 0) return json({ error: "alias_not_found" }, 404);
       return json({ ok: true, id, status: validated.value.status, updated_at: now });
     } catch {
@@ -42,7 +41,9 @@ export async function onRequest(context) {
   }
 
   try {
-    const result = await db.prepare("DELETE FROM aliases WHERE id = ?").bind(id).run();
+    const result = await db.prepare(
+      "DELETE FROM aliases WHERE id = ? AND owner_id = ?"
+    ).bind(id, user.id).run();
     if (!result.meta || result.meta.changes === 0) return json({ error: "alias_not_found" }, 404);
     return json({ ok: true, id, deleted: true });
   } catch {
