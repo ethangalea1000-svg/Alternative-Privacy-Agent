@@ -14,8 +14,8 @@ import { SESSION_COOKIE, createPasswordRecord } from "../functions/_lib/auth.js"
 import { LOGIN_RATE_LIMIT_POLICY, recordLoginFailure } from "../functions/_lib/login-rate-limit.js";
 import { onRequest as apiMiddleware } from "../functions/api/_middleware.js";
 
-const USER_A = { username: "alice", password: "correct horse battery" };
-const USER_B = { username: "bob", password: "another strong password" };
+const USER_A = { username: "test-alice", password: "correct horse battery" };
+const USER_B = { username: "test-bob", password: "another strong password" };
 const ORIGIN = "https://apa.test";
 
 function request(path, {
@@ -201,7 +201,7 @@ test("registration creates a user and a secure HttpOnly session cookie", async (
   const response = await register(db);
   assert.equal(response.status, 201);
   const payload = await response.json();
-  assert.equal(payload.user.username, "alice");
+  assert.equal(payload.user.username, "test-alice");
   assert.equal("password" in payload, false);
   assert.equal("password_hash" in payload.user, false);
   assert.equal("password_salt" in payload.user, false);
@@ -222,7 +222,7 @@ test("registration creates a user and a secure HttpOnly session cookie", async (
 });
 
 test("registration rejects passwords shorter than ten characters", async () => {
-  const response = await register(fakeDb(), { username: "alice", password: "short123" });
+  const response = await register(fakeDb(), { username: "test-alice", password: "short123" });
   assert.equal(response.status, 400);
   assert.equal((await response.json()).fields.password, "must_be_10_to_128_characters");
 });
@@ -230,18 +230,18 @@ test("registration rejects passwords shorter than ten characters", async () => {
 test("registration normalizes usernames and rejects duplicate accounts", async () => {
   const db = fakeDb();
   const first = await register(db, { username: "Alice", password: USER_A.password });
-  const duplicate = await register(db, { username: "ALICE", password: USER_A.password });
+  const duplicate = await register(db, { username: "TEST-ALICE", password: USER_A.password });
   assert.equal(first.status, 201);
   assert.equal(duplicate.status, 409);
   assert.deepEqual(await duplicate.json(), { error: "username_unavailable" });
   assert.equal(db.state.users.length, 1);
 });
 
-test("registration rejects malformed usernames", async () => {
-  const response = await register(fakeDb(), { username: "a!", password: USER_A.password });
+test("registration rejects malformed usernames and usernames without the test prefix", async () => {
+  const response = await register(fakeDb(), { username: "ordinary-user", password: USER_A.password });
   assert.equal(response.status, 400);
   assert.equal((await response.json()).fields.username,
-    "must_be_3_to_32_lowercase_letters_numbers_underscores_or_hyphens");
+    "must_start_with_test_and_use_7_to_32_lowercase_letters_numbers_underscores_or_hyphens");
 });
 
 test("login accepts the correct password and rotates the prior session", async () => {
@@ -257,13 +257,13 @@ test("login accepts the correct password and rotates the prior session", async (
   const newMe = await meHandler(context(request("/api/auth/me", { cookie: newCookie }), db));
   assert.equal(oldMe.status, 401);
   assert.equal(newMe.status, 200);
-  assert.deepEqual((await newMe.json()).user.username, "alice");
+  assert.deepEqual((await newMe.json()).user.username, "test-alice");
 });
 
 test("login refuses an incorrect password without issuing a cookie", async () => {
   const db = fakeDb();
   await register(db);
-  const response = await login(db, { username: "alice", password: "wrong password here" });
+  const response = await login(db, { username: "test-alice", password: "wrong password here" });
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), { error: "invalid_credentials" });
   assert.equal(response.headers.has("set-cookie"), false);
@@ -358,7 +358,7 @@ test("user A cannot update or delete user B aliases", async () => {
   assert.equal(deletion.status, 404);
   assert.equal(db.state.aliases.length, 1);
   assert.equal(db.state.aliases[0].status, "planned");
-  assert.equal(db.state.aliases[0].owner_id, db.state.users.find((user) => user.username === "bob").id);
+  assert.equal(db.state.aliases[0].owner_id, db.state.users.find((user) => user.username === "test-bob").id);
 });
 
 test("authenticated owner can create and list only their own alias", async () => {
