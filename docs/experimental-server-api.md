@@ -146,11 +146,11 @@ Ces différences de CORS/cookies sont liées à la topologie d'exécution et ne 
 
 ## Limites restantes / critères avant toute évolution
 
-1. Ajouter la suite automatisée locale pour les cas listés ci-dessus.
-2. Distinguer explicitement tests locaux, tests avec SQLite en mémoire et tests réels sur Worker/D1.
-3. Réconcilier le code exact du Worker déployé avec `feat/cloudflare-d1-api-tests` et vérifier les différences de routes, schéma, validations, cookies et en-têtes.
-4. Réaliser une revue sécurité dédiée, en particulier PBKDF2, mots de passe, sessions, CORS/CSRF, anti-abus, gestion des erreurs et confidentialité des logs.
-5. Vérifier les en-têtes, cookies et le comportement runtime depuis un navigateur pris en charge.
-6. Documenter la désactivation du Worker de test lorsqu'il n'est plus utilisé.
+1. [x] Ajouter les tests locaux de non-régression demandés ; le statut final CI est encore à confirmer après les derniers commits.
+2. [x] Séparer les tests locaux, les tests SQLite en mémoire et la suite distante opt-in non destructive.
+3. [~] Aligner les règles connues Worker/branche (PBKDF2 de test, préfixe `test-`, plafonds, health avec contrôle D1). La comparaison exacte du source déployé reste impossible tant que le code collé dans le dashboard n'est pas versionné ; les différences CORS/cookies sont documentées.
+4. [x] Réaliser et documenter une revue sécurité source-level ; ce n'est pas un test d'intrusion ni une validation production.
+5. [ ] Exécuter la suite distante opt-in et vérifier le comportement cookies/CORS dans un navigateur pris en charge. La suite distante n'a pas été exécutée par l'assistant.
+6. [ ] Désactiver le Worker de test lorsqu'il n'est plus nécessaire.
 
 **Aucune mise en production n'est approuvée.** La PR reste un brouillon non fusionné. Ne pas relier le Worker au site public, ne pas utiliser de données réelles et ne pas modifier de ressources de production sans autorisation distincte et explicite.
