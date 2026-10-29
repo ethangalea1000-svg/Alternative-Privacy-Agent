@@ -38,28 +38,28 @@
 
       <section id="overview" class="welcome-section">
         <div>
-          <p class="eyebrow">VOTRE ESPACE DE CONFIDENTIALITÉ</p>
-          <h1>Gardez le contrôle<br>de votre <span>identité numérique.</span></h1>
-          <p class="welcome-copy">Organisez vos alias par usage et gardez une vue claire sur leur état, sans centraliser vos informations personnelles.</p>
+          <p class="eyebrow">VOTRE ESPACE PERSONNEL</p>
+          <h1>Vos alias,<br><span>classés ici, sur votre appareil.</span></h1>
+          <p class="welcome-copy">Retrouvez au même endroit les alias que vous utilisez sur différents sites, sans créer de compte ni synchroniser vos données.</p>
         </div>
         <div class="hero-orbit" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit-core">A<span>.</span></div><i class="orbit-node node-one"></i><i class="orbit-node node-two"></i><i class="orbit-node node-three"></i></div>
       </section>
 
-      <section class="notice" aria-label="Limite du prototype">
+      <section class="notice" aria-labelledby="apa-scope-title">
         <span class="notice-icon" aria-hidden="true">i</span>
-        <p><strong>Tableau de bord local :</strong> APA organise les alias que vous utilisez déjà, y compris ceux créés chez d’autres services. Les libellés sont des identifiants de classement, pas des adresses e-mail fonctionnelles. APA ne crée ni ne relaie d’adresses e-mail.</p>
+        <div><strong id="apa-scope-title">Ce qu’APA fait et ne fait pas</strong><p>APA vous aide à classer les alias déjà créés sur d’autres sites. Les noms enregistrés ici servent au classement : ce ne sont pas des adresses e-mail fonctionnelles. APA ne crée pas d’adresse e-mail et ne relaie pas de messages.</p></div>
       </section>
 
       <section class="stats-grid" aria-label="Résumé">
-        <article class="stat-card"><div class="stat-heading"><span>Total des alias</span><span class="stat-icon"><svg class="icon-svg" data-icon="aliases" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16 M4 12h16 M4 17h16"/></svg></span></div><strong class="stat-number" id="stat-total">0</strong><p>Identifiants enregistrés</p></article>
-        <article class="stat-card"><div class="stat-heading"><span>Actifs</span><span class="stat-icon icon-green">✓</span></div><strong class="stat-number" id="stat-active">0</strong><p>Marqués comme actifs</p></article>
-        <article class="stat-card"><div class="stat-heading"><span>En pause</span><span class="stat-icon icon-amber"><svg class="icon-svg" data-icon="pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14 M16 5v14"/></svg></span></div><strong class="stat-number" id="stat-paused">0</strong><p>À réexaminer si besoin</p></article>
-        <article class="stat-card"><div class="stat-heading"><span>À configurer</span><span class="stat-icon icon-purple"><svg class="icon-svg" data-icon="arrow-up-right" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 17 17 7 M7 7h10v10"/></svg></span></div><strong class="stat-number" id="stat-planned">0</strong><p>Pas encore configurés</p></article>
+        <article class="stat-card"><div class="stat-heading"><span>Total des alias</span><span class="stat-icon"><svg class="icon-svg" data-icon="aliases" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16 M4 12h16 M4 17h16"/></svg></span></div><strong class="stat-number" id="stat-total">0</strong><p>Alias enregistrés</p></article>
+        <article class="stat-card"><div class="stat-heading"><span>Actifs</span><span class="stat-icon icon-green">✓</span></div><strong class="stat-number" id="stat-active">0</strong><p>Alias suivis comme actifs</p></article>
+        <article class="stat-card"><div class="stat-heading"><span>En pause</span><span class="stat-icon icon-amber"><svg class="icon-svg" data-icon="pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14 M16 5v14"/></svg></span></div><strong class="stat-number" id="stat-paused">0</strong><p>À vérifier si nécessaire</p></article>
+        <article class="stat-card"><div class="stat-heading"><span>À configurer</span><span class="stat-icon icon-purple"><svg class="icon-svg" data-icon="settings" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 3.1-.2-.1a1.7 1.7 0 0 0-1.8.1l-.2.1h-3.6l-.1-.2a1.7 1.7 0 0 0-1.5-1l-.3 0-3.1-1.8.1-.2a1.7 1.7 0 0 0-.1-1.8l-.1-.2v-3.6l.2-.1a1.7 1.7 0 0 0 1-1.5l0-.3 1.8-3.1.2.1a1.7 1.7 0 0 0 1.8-.1l.2-.1h3.6l.1.2a1.7 1.7 0 0 0 1.5 1l.3 0 3.1 1.8-.1.2a1.7 1.7 0 0 0 .1 1.8l.1.2v3.6z"/></svg></span></div><strong class="stat-number" id="stat-planned">0</strong><p>Pas encore configurés</p></article>
       </section>
 
       <section id="aliases" class="aliases-section">
         <div class="section-heading">
-          <div><p class="eyebrow">VOTRE ORGANISATION</p><h2>Mes alias</h2><p class="section-copy">Un tableau de bord local pour organiser les alias créés chez vos services.</p></div>
+          <div><p class="eyebrow">VOTRE LISTE</p><h2>Mes alias</h2><p class="section-copy">Consultez et mettez à jour les alias utilisés sur vos différents sites.</p></div>
           <div class="section-actions"><button class="secondary-button" id="export-backup" type="button">Exporter JSON</button><button class="secondary-button" id="import-backup" type="button">Importer JSON</button><input id="backup-file" type="file" accept="application/json,.json" hidden><button class="primary-button" id="open-create" type="button"><svg class="icon-svg" data-icon="plus" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14 M5 12h14"/></svg> Ajouter un alias</button></div>
         </div>
         <div class="toolbar">
@@ -71,13 +71,13 @@
         <div id="empty-state" class="empty-state">
           <div class="empty-illustration" aria-hidden="true"><svg class="icon-svg" data-icon="aliases" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16 M4 12h16 M4 17h16"/></svg></div>
           <h3>Aucun alias pour le moment</h3>
-          <p>Créez votre premier identifiant pour commencer à organiser vos usages.</p>
-          <button class="secondary-button" id="empty-create" type="button">Créer mon premier alias</button>
+          <p>Ajoutez votre premier alias pour commencer.</p>
+          <button class="secondary-button" id="empty-create" type="button">Ajouter mon premier alias</button>
         </div>
       </section>
 
       <section id="identity" class="identity-section">
-        <div class="section-heading"><div><p class="eyebrow">IDENTITÉ PUBLIQUE MAÎTRISÉE</p><h2>Mon pseudonyme</h2><p class="section-copy">Préparez une identité publique sobre, sans inventer d’attributs ni mélanger les espaces personnels et publics.</p></div></div>
+        <div class="section-heading"><div><p class="eyebrow">PROFIL PUBLIC</p><h2>Mon pseudonyme</h2><p class="section-copy">Choisissez un pseudonyme et une bio simple. Évitez les détails qui pourraient vous identifier et gardez vos espaces personnels et publics séparés.</p></div></div>
         <div class="identity-layout">
           <form id="identity-form" class="identity-card">
             <label class="field-label" for="identity-pseudonym">Pseudonyme <span>Facultatif</span></label>
@@ -95,27 +95,27 @@
           </form>
           <aside class="identity-card identity-checklist">
             <p class="eyebrow">REPÈRES DE CONFIDENTIALITÉ</p><h3>Avant de publier</h3>
-            <label class="check-row"><input type="checkbox" data-identity-check="separate-real-name"><span>Ne pas associer publiquement ce pseudonyme à mon vrai nom.</span></label>
-            <label class="check-row"><input type="checkbox" data-identity-check="not-personal-accounts"><span>Ne pas réutiliser ce pseudonyme sur mes comptes personnels.</span></label>
-            <label class="check-row"><input type="checkbox" data-identity-check="no-identifying-details"><span>Ne pas publier de détails personnels précis : lieu fréquenté, ville ou âge exact.</span></label>
-            <label class="check-row"><input type="checkbox" data-identity-check="review-links"><span>Vérifier que mes liens publics ne révèlent pas d’informations privées.</span></label>
-            <p class="field-hint">Cette liste aide à repérer certains risques, mais ne garantit pas l’anonymat. Un profil public peut être recoupé avec d’autres informations.</p>
+            <label class="check-row"><input type="checkbox" data-identity-check="separate-real-name"><span>N’associez pas publiquement ce pseudonyme à votre vrai nom.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="not-personal-accounts"><span>Ne réutilisez pas ce pseudonyme sur vos comptes personnels.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="no-identifying-details"><span>Ne publiez pas de détails personnels précis : établissement ou lieu fréquenté, ville ou âge exact.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="review-links"><span>Vérifiez que vos liens publics ne révèlent pas d’informations privées.</span></label>
+            <p class="field-hint">Cette checklist aide à repérer certains risques, mais ne garantit pas l’anonymat. Un profil public peut être rapproché d’autres informations.</p>
           </aside>
         </div>
       </section>
 
       <section id="privacy" class="privacy-section">
         <div class="privacy-section-icon" aria-hidden="true"><svg class="icon-svg" data-icon="privacy" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 20 6v5c0 5-3.4 8.2-8 10-4.6-1.8-8-5-8-10V6z M9 12l2 2 4-4"/></svg></div>
-        <div><h2>La confidentialité dès la conception</h2><p>Dans cette version, les données sont conservées dans le stockage local de ce navigateur. Elles ne sont ni envoyées à un serveur ni synchronisées entre appareils. Effacer les données du navigateur peut les supprimer.</p></div>
+        <div><h2>Vos données restent dans ce navigateur</h2><p>APA enregistre vos alias et votre fiche dans le stockage local de ce navigateur. Rien n’est envoyé à un serveur ni synchronisé entre appareils. Si vous effacez les données du navigateur, vos informations locales peuvent être supprimées définitivement.</p></div>
       </section>
-      <footer class="page-footer"><span>APA · Prototype 0.3.0</span><span>Conçu pour une gestion plus claire de votre vie numérique.</span></footer>
+      <footer class="page-footer"><span>APA · Prototype 0.3.0</span><span>Vos alias, classés ici, sur votre appareil.</span></footer>
     </main>
   </div>
 
   <dialog id="alias-dialog" class="alias-dialog" aria-labelledby="dialog-title">
     <form id="alias-form">
-      <div class="dialog-heading"><div><p class="eyebrow">NOUVEL IDENTIFIANT</p><h2 id="dialog-title">Créer un alias</h2></div><button class="close-button" id="close-dialog" type="button" aria-label="Fermer"><svg class="icon-svg" data-icon="close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18 M6 6l12 12"/></svg></button></div>
-      <p class="dialog-copy">Organisez un alias déjà créé chez un service. APA ne crée pas d’adresse e-mail fonctionnelle.</p>
+      <div class="dialog-heading"><div><p class="eyebrow">NOUVEL ALIAS</p><h2 id="dialog-title">Ajouter un alias</h2></div><button class="close-button" id="close-dialog" type="button" aria-label="Fermer"><svg class="icon-svg" data-icon="close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18 M6 6l12 12"/></svg></button></div>
+      <p class="dialog-copy">Enregistrez ici un alias que vous utilisez déjà sur un site.</p>
       <label class="field-label" for="alias-name">Nom de l’alias <span>Obligatoire</span></label>
       <input class="text-field" id="alias-name" name="alias-name" maxlength="48" placeholder="Ex. Boutique de livres" required>
       <label class="field-label" for="alias-category">Catégorie</label>
@@ -125,8 +125,8 @@
       <label class="field-label" for="alias-notes">Notes <span>Facultatif</span></label>
       <textarea class="text-field" id="alias-notes" name="alias-notes" maxlength="1000" rows="3" placeholder="Ex. Usage, date de création, raison du choix"></textarea>
       <label class="field-label" for="alias-status">Statut</label>
-      <select class="text-field" id="alias-status" name="alias-status"><option value="planned">À configurer</option><option value="active">Actif (suivi uniquement)</option><option value="paused">En pause</option></select>
-      <p class="field-hint">Ne stockez aucun mot de passe ni aucune donnée sensible. Les données restent dans ce navigateur.</p>
+      <select class="text-field" id="alias-status" name="alias-status"><option value="planned">À configurer</option><option value="active">Actifs</option><option value="paused">En pause</option></select>
+      <p class="field-hint">Ne stockez pas de mot de passe ni de données sensibles dans vos notes.</p>
       <div class="dialog-actions"><button class="secondary-button" id="cancel-create" type="button">Annuler</button><button class="primary-button" id="save-alias" type="submit">Enregistrer</button></div>
       <p class="form-error" id="form-error" role="alert" hidden></p>
     </form>
