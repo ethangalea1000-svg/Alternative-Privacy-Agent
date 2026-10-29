@@ -392,7 +392,7 @@ test("alias input rejects empty, long, or invalid category", () => {
 });
 
 test("alias input rejects control characters including a NUL escape", () => {
-  const nulCharacter = "shop\u0000name";
+  const nulCharacter = "shop" + String.fromCharCode(0) + "name";
   assert.equal(nulCharacter.charCodeAt(4), 0, "fixture must contain a real NUL control character");
   assert.equal(Boolean(validateAliasInput({ name: nulCharacter, category: "achats" }).errors?.name), true);
   const controlCodes = [...Array.from({ length: 0x20 }, (_, code) => code), 0x7f];
