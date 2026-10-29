@@ -72,3 +72,17 @@ test("REMOTE: unknown API path returns not found", remoteTest, async () => {
   const response = await call("/api/remote-regression-path-that-does-not-exist");
   assert.equal(response.status, 404);
 });
+
+
+test("REMOTE: allowed browser origin receives a CORS preflight response", remoteTest, async () => {
+  const response = await call("/api/auth/login", {
+    method: "OPTIONS",
+    headers: {
+      origin: allowedOrigin,
+      "access-control-request-method": "POST",
+      "access-control-request-headers": "content-type"
+    }
+  });
+  assert.ok([200, 204].includes(response.status), "expected successful preflight");
+  assert.equal(response.headers.get("access-control-allow-origin"), allowedOrigin);
+});
