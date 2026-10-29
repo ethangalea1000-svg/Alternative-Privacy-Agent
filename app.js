@@ -1,7 +1,8 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "apa.aliases.v1";
+  import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeImportedAliases, updateAlias, validateAlias } from "./prototype-store.js";
+
   const categories = {
     achats: "Achats",
     projets: "Projets",
@@ -22,6 +23,11 @@
     name: document.querySelector("#alias-name"),
     category: document.querySelector("#alias-category"),
     status: document.querySelector("#alias-status"),
+    site: document.querySelector("#alias-site"),
+    notes: document.querySelector("#alias-notes"),
+    exportButton: document.querySelector("#export-backup"),
+    importButton: document.querySelector("#import-backup"),
+    backupFile: document.querySelector("#backup-file"),
     error: document.querySelector("#form-error"),
     search: document.querySelector("#search"),
     categoryFilter: document.querySelector("#category-filter"),
@@ -34,21 +40,9 @@
 
   function loadAliases() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return [];
-      const parsed = JSON.parse(saved);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.filter((item) =>
-        item && typeof item.id === "string" &&
-        typeof item.name === "string" && item.name.trim().length > 0 &&
-        item.name.length <= 48 &&
-        typeof item.label === "string" && /^[a-z0-9-]{1,40}$/.test(item.label) &&
-        Object.hasOwn(categories, item.category) &&
-        Object.hasOwn(statuses, item.status) &&
-        typeof item.createdAt === "string" &&
-        !Number.isNaN(Date.parse(item.createdAt))
-      );
+      return parseStoredAliases(localStorage.getItem(STORAGE_KEY));
     } catch {
+      showToast("Les données locales sont illisibles. Exportez-les avant toute réinitialisation du stockage.");
       return [];
     }
   }
@@ -104,9 +98,17 @@
       element("span", "status-pill status-" + item.status, statuses[item.status])
     );
     main.append(name, id, meta);
+    if (item.site) main.append(element("p", "alias-site", "Utilisé sur : " + item.site));
+    if (item.notes) main.append(element("p", "alias-notes", item.notes));
     const date = element("span", "alias-date", formatDate(item.createdAt));
     date.setAttribute("aria-label", "Créé le " + formatDate(item.createdAt));
     const actions = element("div", "alias-actions");
+
+    const editButton = element("button", "icon-button", "✎");
+    editButton.type = "button";
+    editButton.title = "Modifier cet alias";
+    editButton.setAttribute("aria-label", "Modifier " + item.name);
+    editButton.addEventListener("click", () => openDialog(item));
 
     const statusButton = element("button", "icon-button", item.status === "paused" ? "▶" : "Ⅱ");
     statusButton.type = "button";
@@ -120,7 +122,7 @@
     deleteButton.setAttribute("aria-label", "Supprimer " + item.name);
     deleteButton.addEventListener("click", () => deleteAlias(item.id));
 
-    actions.append(statusButton, deleteButton);
+    actions.append(editButton, statusButton, deleteButton);
     card.append(symbol, main, date, actions);
     return card;
   }
@@ -160,10 +162,20 @@
     toastTimeout = setTimeout(() => elements.toast.classList.remove("is-visible"), 3500);
   }
 
-  function openDialog() {
+  let editingId = null;
+
+  function openDialog(item = null) {
+    editingId = item?.id || null;
     elements.error.hidden = true;
     elements.error.textContent = "";
     elements.form.reset();
+    document.querySelector("#dialog-title").textContent = item ? "Modifier un alias" : "Ajouter un alias";
+    document.querySelector(".dialog-heading .eyebrow").textContent = item ? "MODIFIER L’ORGANISATION" : "NOUVEL IDENTIFIANT";
+    elements.name.value = item?.name || "";
+    elements.category.value = item?.category || "achats";
+    elements.status.value = item?.status || "planned";
+    elements.site.value = item?.site || "";
+    elements.notes.value = item?.notes || "";
     if (typeof elements.dialog.showModal === "function") {
       elements.dialog.showModal();
       elements.name.focus();
@@ -204,7 +216,44 @@
     showToast("Identifiant supprimé du stockage local.");
   }
 
-  document.querySelector("#open-create").addEventListener("click", openDialog);
+  document.querySelector("#open-create").addEventListener("click", () => openDialog());
+  elements.exportButton.addEventListener("click", () => {
+    try {
+      const blob = new Blob([serializeAliases(aliases)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = element("a");
+      link.href = url;
+      link.download = "apa-sauvegarde-" + new Date().toISOString().slice(0, 10) + ".json";
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast("Sauvegarde JSON exportée. Conservez-la dans un endroit sûr.");
+    } catch {
+      showToast("Impossible de créer la sauvegarde JSON.");
+    }
+  });
+  elements.importButton.addEventListener("click", () => elements.backupFile.click());
+  elements.backupFile.addEventListener("change", async () => {
+    const file = elements.backupFile.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      showToast("Fichier trop volumineux : limite de 2 Mo.");
+      elements.backupFile.value = "";
+      return;
+    }
+    try {
+      const imported = parseBackup(await file.text());
+      const replace = window.confirm("Importer " + imported.length + " alias ? OK = fusionner (les mêmes identifiants seront mis à jour). Annuler = abandonner.");
+      if (!replace) return;
+      const previous = aliases;
+      aliases = mergeImportedAliases(aliases, imported);
+      if (!persistAliases()) aliases = previous;
+      else { render(); showToast("Sauvegarde importée localement."); }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Fichier de sauvegarde invalide.");
+    } finally {
+      elements.backupFile.value = "";
+    }
+  });
   document.querySelector("#empty-create").addEventListener("click", openDialog);
   document.querySelector("#close-dialog").addEventListener("click", closeDialog);
   document.querySelector("#cancel-create").addEventListener("click", closeDialog);
@@ -228,26 +277,38 @@
       return;
     }
     const item = {
-      id: makeId(),
+      id: editingId || makeId(),
       name,
-      label: makeInternalLabel(name),
+      label: editingId ? aliases.find((alias) => alias.id === editingId)?.label : makeInternalLabel(name),
       category: elements.category.value,
       status: elements.status.value,
-      createdAt: new Date().toISOString()
+      site: elements.site.value.trim(),
+      notes: elements.notes.value.trim(),
+      createdAt: editingId ? aliases.find((alias) => alias.id === editingId)?.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     if (!Object.hasOwn(categories, item.category) || !Object.hasOwn(statuses, item.status)) {
       elements.error.textContent = "Une valeur sélectionnée est invalide. Vérifiez les champs et réessayez.";
       elements.error.hidden = false;
       return;
     }
-    aliases.unshift(item);
+    const previous = aliases;
+    try {
+      aliases = editingId ? updateAlias(aliases, editingId, item) : [item, ...aliases];
+      if (!validateAlias(aliases.find((alias) => alias.id === item.id))) throw new TypeError("Informations invalides.");
+    } catch {
+      elements.error.textContent = "Vérifiez les champs et leurs limites de longueur.";
+      elements.error.hidden = false;
+      return;
+    }
     if (!persistAliases()) {
-      aliases.shift();
+      aliases = previous;
       return;
     }
     closeDialog();
     render();
-    showToast("Identifiant créé dans ce navigateur.");
+    showToast(editingId ? "Alias modifié dans ce navigateur." : "Alias ajouté au tableau de bord local.");
+    editingId = null;
   });
 
   elements.dialog.addEventListener("click", (event) => {
