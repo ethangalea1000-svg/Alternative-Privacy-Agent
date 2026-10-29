@@ -168,8 +168,9 @@ test("alias item mutations return 404 for missing rows and 500 without leaking d
     method: "DELETE"
   }), brokenDb, { id: ALIAS_ID }));
   assert.equal(failed.status, 500);
-  assert.deepEqual(await failed.json(), { error: "database_error" });
-  assert.equal(JSON.stringify(await failed.clone().json()).includes("secret SQL"), false);
+  const failurePayload = await failed.json();
+  assert.deepEqual(failurePayload, { error: "database_error" });
+  assert.equal(JSON.stringify(failurePayload).includes("secret SQL"), false);
 });
 
 test("state-changing API routes reject foreign origins before database access", async () => {
