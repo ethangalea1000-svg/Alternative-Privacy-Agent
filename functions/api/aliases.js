@@ -94,7 +94,7 @@ export async function onRequest(context) {
   } catch (error) {
     // A collision is rare, but never return SQL errors or details to clients.
     const message = String(error?.message || "");
-    if (/UNIQUE constraint failed: aliases\\.(?:label|id)\\b/i.test(message)) {
+    if (/UNIQUE constraint failed: aliases\.(?:label|id)\b/i.test(message)) {
       return json({ error: "alias_conflict_retry" }, 409);
     }
     return json({ error: "database_error" }, 500);
