@@ -12,7 +12,7 @@ import { onRequest as apiMiddleware } from "../functions/api/_middleware.js";
 
 const ORIGIN = "https://apa.test";
 const COOKIE = SESSION_COOKIE + "=" + "a".repeat(64);
-const USER = { id: "user-a", username: "alice", created_at: "2026-01-01T00:00:00.000Z" };
+const USER = { id: "user-a", username: "test-alice", created_at: "2026-01-01T00:00:00.000Z" };
 const ALIAS_ID = "00000000-0000-4000-8000-000000000001";
 
 function request(path, {
@@ -74,7 +74,7 @@ function context(req, db = apiDb(), params = {}) {
 }
 
 test("authenticated alias listing binds owner, filters, and bounded limit", async () => {
-  const db = apiDb({ aliases: [{ id: ALIAS_ID, name: "Books", category: "achats", status: "active" }] });
+  const db = apiDb({ aliases: [{ id: ALIAS_ID, name: "test-books", category: "achats", status: "active" }] });
   const response = await aliasesHandler(context(request("/api/aliases?category=achats&status=active&limit=25"), db));
   assert.equal(response.status, 200);
   assert.equal((await response.json()).aliases.length, 1);
@@ -111,7 +111,7 @@ test("alias creation rejects bad input before writing and maps label conflicts t
 
   const conflictDb = apiDb({ runError: new Error("UNIQUE constraint failed: aliases.label") });
   const conflict = await aliasesHandler(context(request("/api/aliases", {
-    method: "POST", body: { name: "Books", category: "achats" }
+    method: "POST", body: { name: "test-books", category: "achats" }
   }), conflictDb));
   assert.equal(conflict.status, 409);
   assert.deepEqual(await conflict.json(), { error: "alias_conflict_retry" });
@@ -125,10 +125,10 @@ test("alias list and mutation endpoints fail closed when the database is missing
   assert.deepEqual(await response.json(), { error: "database_not_configured" });
 
   const register = await registerHandler({ request: request("/api/auth/register", {
-    method: "POST", body: { username: "alice", password: "correct horse battery" }
+    method: "POST", body: { username: "test-alice", password: "correct horse battery" }
   }), env: {} });
   const login = await loginHandler({ request: request("/api/auth/login", {
-    method: "POST", body: { username: "alice", password: "correct horse battery" }
+    method: "POST", body: { username: "test-alice", password: "correct horse battery" }
   }), env: {} });
   const logout = await logoutHandler({ request: request("/api/auth/logout", { method: "POST" }), env: {} });
   assert.equal(register.status, 503);
@@ -148,7 +148,7 @@ test("alias item rejects malformed IDs and invalid status before database writes
     method: "PATCH", body: { status: "deleted" }
   }), db, { id: ALIAS_ID }));
   assert.equal(invalidStatus.status, 400);
-  assert.deepEqual((await invalidStatus.json()).fields, { status: "invalid_status" });
+  assert.deepEqual(await invalidStatus.json(), { error: "invalid_status" });
   assert.equal(db.state.calls.some((call) => /^(UPDATE|DELETE) aliases/i.test(call.sql)), false);
 });
 
@@ -175,7 +175,7 @@ test("alias item mutations return 404 for missing rows and 500 without leaking d
 
 test("state-changing API routes reject foreign origins before database access", async () => {
   for (const [handler, path, method, body, params] of [
-    [aliasesHandler, "/api/aliases", "POST", { name: "Books", category: "achats" }, {}],
+    [aliasesHandler, "/api/aliases", "POST", { name: "test-books", category: "achats" }, {}],
     [aliasItemHandler, "/api/aliases/" + ALIAS_ID, "PATCH", { status: "paused" }, { id: ALIAS_ID }],
     [aliasItemHandler, "/api/aliases/" + ALIAS_ID, "DELETE", undefined, { id: ALIAS_ID }],
     [logoutHandler, "/api/auth/logout", "POST", undefined, {}]
@@ -212,7 +212,7 @@ test("authentication endpoints expose method contracts and reject foreign logout
     method: "POST", origin: "https://evil.example"
   }), apiDb()));
   assert.equal(foreignLogout.status, 403);
-  assert.deepEqual(await foreignLogout.json(), { error: "same_origin_required" });
+  assert.deepEqual(await foreignLogout.json(), { error: "test_origin_not_allowed" });
 });
 
 test("API middleware applies the complete security-header baseline without overwriting explicit headers", async () => {
