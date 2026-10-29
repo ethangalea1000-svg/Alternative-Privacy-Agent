@@ -8,3 +8,6 @@ CREATE TABLE IF NOT EXISTS auth_login_limits (
 
 CREATE INDEX IF NOT EXISTS idx_auth_login_limits_blocked_until
   ON auth_login_limits(blocked_until);
+
+CREATE INDEX IF NOT EXISTS idx_auth_login_limits_updated_at
+  ON auth_login_limits(updated_at);

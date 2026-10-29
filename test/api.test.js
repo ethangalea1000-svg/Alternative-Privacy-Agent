@@ -11,7 +11,7 @@ import {
   isValidId, newInternalLabel, readJsonObject, validateAliasInput, validateStatusInput
 } from "../functions/_lib/http.js";
 import { SESSION_COOKIE } from "../functions/_lib/auth.js";
-import { LOGIN_RATE_LIMIT_POLICY } from "../functions/_lib/login-rate-limit.js";
+import { LOGIN_RATE_LIMIT_POLICY, recordLoginFailure } from "../functions/_lib/login-rate-limit.js";
 import { onRequest as apiMiddleware } from "../functions/api/_middleware.js";
 
 const USER_A = { username: "alice", password: "correct horse battery" };
@@ -99,6 +99,11 @@ function fakeDb() {
               row.updated_at = updated_at;
             }
             return { meta: { changes: 1 } };
+          }
+          if (/^DELETE FROM auth_login_limits WHERE updated_at < \\?/i.test(sql)) {
+            const before = state.loginLimits.length;
+            state.loginLimits = state.loginLimits.filter((item) => item.updated_at >= values[0]);
+            return { meta: { changes: before - state.loginLimits.length } };
           }
           if (/^DELETE FROM auth_login_limits WHERE key_hash = \?/i.test(sql)) {
             const before = state.loginLimits.length;
@@ -491,6 +496,25 @@ test("login rate limit blocks after ten failed attempts and exposes Retry-After"
   assert.equal(blocked.status, 429);
   assert.ok(Number(blocked.headers.get("retry-after")) > 0);
   assert.equal((await blocked.json()).error, "too_many_login_attempts");
+});
+
+
+test("failed logins clean up stale rate-limit buckets without deleting recent buckets", async () => {
+  const db = fakeDb();
+  const now = Date.parse("2026-01-01T00:00:00.000Z");
+  db.state.loginLimits.push(
+    { key_hash: "stale-bucket", failed_attempts: 1, window_started_at: now - 31 * 60 * 1000,
+      blocked_until: null, updated_at: new Date(now - 31 * 60 * 1000).toISOString() },
+    { key_hash: "recent-bucket", failed_attempts: 2, window_started_at: now - 2 * 60 * 1000,
+      blocked_until: null, updated_at: new Date(now - 2 * 60 * 1000).toISOString() }
+  );
+
+  await recordLoginFailure(db, ["new-ip-bucket", "new-username-bucket"], now);
+
+  assert.equal(db.state.loginLimits.some((row) => row.key_hash === "stale-bucket"), false);
+  assert.equal(db.state.loginLimits.some((row) => row.key_hash === "recent-bucket"), true);
+  assert.equal(db.state.loginLimits.some((row) => row.key_hash === "new-ip-bucket"), true);
+  assert.equal(db.state.loginLimits.some((row) => row.key_hash === "new-username-bucket"), true);
 });
 
 test("successful login clears both hashed rate-limit buckets", async () => {

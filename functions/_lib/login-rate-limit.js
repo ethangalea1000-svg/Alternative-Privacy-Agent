@@ -37,6 +37,12 @@ export async function loginRateLimitStatus(db, request, username, now = Date.now
 }
 
 export async function recordLoginFailure(db, keys, now = Date.now()) {
+  // Retain only recent buckets. Old rows cannot still represent an active
+  // 15-minute window or block, and cleanup prevents unbounded D1 growth.
+  const retentionCutoff = new Date(now - WINDOW_MS - BLOCK_MS).toISOString();
+  await db.prepare("DELETE FROM auth_login_limits WHERE updated_at < ?")
+    .bind(retentionCutoff).run();
+
   const windowStartedAt = now - WINDOW_MS;
   const blockedUntil = now + BLOCK_MS;
   const updatedAt = new Date(now).toISOString();
