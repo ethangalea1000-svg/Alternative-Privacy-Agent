@@ -6,6 +6,7 @@ import { onRequest as registerHandler } from "../functions/api/auth/register.js"
 import { onRequest as loginHandler } from "../functions/api/auth/login.js";
 import { onRequest as logoutHandler } from "../functions/api/auth/logout.js";
 import { onRequest as meHandler } from "../functions/api/auth/me.js";
+import { onRequest as unknownApiHandler } from "../functions/api/[[path]].js";
 import { readJsonObject } from "../functions/_lib/http.js";
 import { SESSION_COOKIE } from "../functions/_lib/auth.js";
 import { onRequest as apiMiddleware } from "../functions/api/_middleware.js";
@@ -237,4 +238,11 @@ test("API middleware applies the complete security-header baseline without overw
   }
   assert.equal(response.headers.get("content-security-policy"), "default-src 'self'");
   assert.equal(response.headers.get("x-custom"), "kept");
+});
+
+
+test("unknown API routes return the Worker-compatible JSON 404", async () => {
+  const response = await unknownApiHandler(context(request("/api/unknown-route")));
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), { error: "not_found" });
 });
