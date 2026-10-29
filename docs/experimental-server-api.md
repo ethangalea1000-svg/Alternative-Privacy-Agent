@@ -122,6 +122,28 @@ Les tests réels rapportés couvrent déjà health, inscription, session, créat
 
 La revue source-level est consignée dans [`docs/security-review-test-prototype.md`](./security-review-test-prototype.md). Elle identifie notamment l'écart PBKDF2 entre le Worker testé et la branche, l'exposition Internet du Worker de test, le coût des inscriptions, les effets du verrouillage de compte et les différences CORS/cookies entre le Worker autonome et Pages Functions. Cette revue n'est pas une approbation de production ni un test d'intrusion indépendant.
 
+## Réconciliation Worker de test ↔ branche expérimentale
+
+La branche a été ajustée côté code (sans déploiement) pour aligner les contrôles test-only connus avec le Worker rapporté :
+
+- PBKDF2-SHA-256 à 100 000 itérations, marqué explicitement comme paramètre de test uniquement.
+- Noms d'utilisateur obligatoirement préfixés par `test-`.
+- Limite de 20 comptes synthétiques et de 25 alias par utilisateur.
+- Vérification de doublon et de plafond avant le calcul PBKDF2, afin d'éviter un coût inutile.
+- `GET /api/health` vérifie désormais réellement que `env.DB` répond à `SELECT 1` et renvoie l'état de la base.
+- Catégories, statuts, longueur de mot de passe, expiration des sessions et règle de limitation de connexion restent couverts par les tests locaux.
+
+### Différences restantes, conservées volontairement
+
+| Sujet | Worker autonome de test rapporté | Branche Pages Functions |
+|---|---|---|
+| Topologie navigateur | CORS autorisant certaines origines locales de développement ; cookie adapté au test cross-origin | API conçue en same-origin ; vérification stricte de `Origin`, cookie `SameSite=Lax` |
+| Erreur d'origine refusée | `test_origin_not_allowed` rapporté | `same_origin_required` |
+| Identifiant de service health | `apa-test-api` | `apa-api` |
+| Source exécutée | Code collé dans le dashboard Cloudflare | Code versionné dans ce dépôt |
+
+Ces différences de CORS/cookies sont liées à la topologie d'exécution et ne doivent pas être copiées aveuglément d'une variante à l'autre. L'alignement des règles métier ne signifie pas que les deux artefacts sont identiques octet par octet. La source exacte déployée dans le dashboard n'est pas versionnée dans le dépôt ; le rapprochement complet nécessite de la recopier dans un fichier dédié puis de vérifier son diff. Aucun changement de code n'a été déployé par cette étape.
+
 ## Limites restantes / critères avant toute évolution
 
 1. Ajouter la suite automatisée locale pour les cas listés ci-dessus.
