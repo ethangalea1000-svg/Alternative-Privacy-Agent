@@ -147,13 +147,13 @@ Le code Worker de référence a été fourni par l'utilisateur. La branche Pages
 | Health | `apa-test-api` et vérification réelle de `SELECT 1` |
 | Réponses | Codes d'erreur, réponses de validation et corps 405 rapprochés du Worker |
 
-La branche Pages Functions reste une implémentation versionnée qui partage les contrats attendus ; cela ne signifie pas que son artefact d'exécution est identique octet par octet au Worker autonome. La liste des alias de la branche conserve en plus des filtres de requête (`category`, `status`, `limit`) ; confirmer si ces paramètres existent dans le Worker de référence avant de déclarer une parité totale de la surface API. Aucun changement de code n'a été déployé par cette étape.
+La branche Pages Functions reste une implémentation versionnée qui partage les contrats attendus ; son artefact d'exécution n'est pas identique octet par octet au Worker autonome. Les filtres de liste `category`, `status` et `limit` sont également présents dans le Worker de référence. Une route catch-all renvoie désormais `{ error: "not_found" }` avec HTTP 404 pour les chemins API inconnus. Aucun changement de code n'a été déployé par cette étape.
 
 ## Limites restantes / critères avant toute évolution
 
 1. [x] Tests locaux de non-régression : le job « Run tests » a réussi sur le commit de code `74e952b` (77 tests, 69 réussis, 0 échec, 8 tests distants ignorés).
 2. [x] Séparer les tests locaux, les tests SQLite en mémoire et la suite distante opt-in non destructive.
-3. [~] Contrats de validation, CORS, cookies, en-têtes et réponses alignés sur le Worker de référence fourni. Confirmer encore si les filtres de liste `category`, `status` et `limit` sont aussi présents dans le Worker avant de déclarer une parité complète de toutes les routes.
+3. [x] Contrats connus de validation, CORS, cookies, en-têtes, réponses 405/404, filtres de liste et requêtes SQL rapprochés du Worker de référence. Le code du Worker n'est pas déployé ou modifié par cette étape ; la vérification distante et navigateur reste à faire.
 4. [x] Réaliser et documenter une revue sécurité source-level ; ce n'est pas un test d'intrusion ni une validation production.
 5. [ ] Exécuter la suite distante opt-in et vérifier le comportement cookies/CORS dans un navigateur pris en charge. La suite distante n'a pas été exécutée par l'assistant.
 6. [ ] Désactiver le Worker de test lorsqu'il n'est plus nécessaire.
