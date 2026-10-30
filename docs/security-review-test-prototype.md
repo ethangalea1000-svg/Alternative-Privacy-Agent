@@ -1,6 +1,6 @@
 # APA test prototype — security review findings
 
-**Review date:** 2026-10-29  
+**Review date:** 2026-10-30  
 **Scope:** experimental branch `feat/cloudflare-d1-api-tests` and the user-reported test Worker `apa-test-api`.  
 **Not a production approval:** this is a source-level review and reconciliation checklist, not a penetration test or independent verification of the deployed Worker. No production resources or real data were accessed.
 
@@ -14,13 +14,13 @@
 
 **Required action:** keep this value explicitly test-only. Do not infer that 100,000 iterations is production-approved or equivalent in security to 310,000.
 
-### P2 — Password verification accepts iteration counts above the observed Workers runtime ceiling
+### Résolu — cohérence du nombre d'itérations PBKDF2
 
-**Evidence:** the Worker creates new records with 100,000 PBKDF2 iterations, but `verifyPassword` accepts stored iteration counts up to 1,000,000. The reported Workers Web Crypto runtime rejects counts above 100,000.
+**État vérifié sur la branche :** `createPasswordRecord` génère les hachages avec `PBKDF2_ITERATIONS = 100_000`. `verifyPassword` n'accepte désormais que cette valeur exacte (`iterations !== PBKDF2_ITERATIONS` entraîne un refus), puis retourne `false` pour les enregistrements mal formés ou incompatibles après un calcul factice à 100 000 itérations.
 
-**Impact:** if a stored row ever contains an iteration count above 100,000, login can throw during `deriveBits` and be returned as a generic `database_error` rather than a normal invalid-credentials response. The user reports that the failed v1 registration did not create a real account, so this is a latent compatibility edge case, not evidence of a current affected row.
+**Test de régression :** un hachage à 100 000 itérations est accepté ; un enregistrement déclarant 1 000 000 est refusé. La CI du commit de test `655aa55` a réussi. Un petit durcissement ultérieur a remplacé les bornes codées en dur par une égalité stricte avec la constante.
 
-**Required action:** before the test database contains any such records, constrain verification to runtime-supported counts or define a deliberate migration/compatibility strategy. Keep this test-only and do not interpret it as production password-hashing approval.
+**Limite :** cette cohérence runtime ne constitue pas une approbation de la politique PBKDF2 pour la production. La valeur reste explicitement propre au prototype Workers testé.
 
 ### P2 — The test Worker is internet-reachable and must be treated as an exposed test surface
 
