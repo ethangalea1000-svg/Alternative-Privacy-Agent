@@ -319,6 +319,10 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     document.querySelector("#backup-choice-row").hidden = mode !== "export";
     document.querySelector("#backup-title").textContent = mode === "export" ? "Exporter une sauvegarde" : "Importer une sauvegarde chiffrée";
     backupSubmit.textContent = mode === "export" ? "Exporter" : "Déchiffrer et importer";
+    document.querySelector("#backup-warning").textContent = mode === "export"
+      ? "Export chiffré : 12 caractères minimum. Sans ce mot de passe, la sauvegarde sera irrécupérable. APA ne le conserve pas."
+      : "APA ne conserve pas ce mot de passe. Sans lui, le fichier ne peut pas être récupéré.";
+    document.querySelector("#backup-scope").textContent = (mode === "export" ? "Décochez l'option pour exporter en clair. " : "") + "Le stockage local du navigateur n'est pas chiffré par cette option. L'export contient les alias, pas la fiche pseudonyme.";
     backupPassword.required = true;
     backupPassword.minLength = mode === "export" ? 12 : 1;
     backupPassword.disabled = false;
@@ -339,9 +343,29 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     backupPassword.disabled = !backupChoice.checked;
     if (!backupChoice.checked) backupPassword.value = "";
   });
-  function acceptImportedBackup(text) {
+  async function confirmBackupMerge(count) {
+    const dialog = document.querySelector("#backup-merge-dialog");
+    document.querySelector("#backup-merge-description").textContent = "Importer " + count + " alias ? Les alias ayant le même identifiant seront mis à jour. Les autres seront conservés.";
+    dialog.showModal();
+    return await new Promise(resolve => {
+      const accept = () => finish(true);
+      const cancel = () => finish(false);
+      const escape = event => { event.preventDefault(); finish(false); };
+      function finish(value) {
+        document.querySelector("#backup-merge-accept").removeEventListener("click", accept);
+        document.querySelector("#backup-merge-cancel").removeEventListener("click", cancel);
+        dialog.removeEventListener("cancel", escape);
+        dialog.close();
+        resolve(value);
+      }
+      document.querySelector("#backup-merge-accept").addEventListener("click", accept);
+      document.querySelector("#backup-merge-cancel").addEventListener("click", cancel);
+      dialog.addEventListener("cancel", escape);
+    });
+  }
+  async function acceptImportedBackup(text) {
     const imported = parseBackup(text);
-    if (!window.confirm("Importer " + imported.length + " alias ? OK = fusionner (les mêmes identifiants seront mis à jour). Annuler = abandonner.")) return false;
+    if (!await confirmBackupMerge(imported.length)) return false;
     const previous = aliases;
     aliases = mergeImportedAliases(aliases, imported);
     if (!persistAliases()) { aliases = previous; return false; }
@@ -371,7 +395,7 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
         showToast(encrypted ? "Sauvegarde chiffrée exportée. Gardez le mot de passe à part." : "Sauvegarde exportée en clair : gardez le fichier privé.");
       } else {
         const plaintext = await decryptBackup(pendingBackupText, backupPassword.value);
-        if (!acceptImportedBackup(plaintext)) return;
+        if (!await acceptImportedBackup(plaintext)) return;
       }
       backupBusy = false;
       closeBackupDialog();
@@ -395,7 +419,7 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     try {
       const text = await file.text();
       if (isEncryptedBackup(text)) openBackupDialog("import", text);
-      else acceptImportedBackup(text);
+      else await acceptImportedBackup(text);
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Fichier de sauvegarde invalide.");
     } finally {
