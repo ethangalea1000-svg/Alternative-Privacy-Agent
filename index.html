@@ -132,5 +132,17 @@
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="backup-dialog" aria-labelledby="backup-title" class="backup-style-0">
+    <form id="backup-password-form">
+      <h2 id="backup-title">Exporter une sauvegarde</h2>
+      <p id="backup-choice-row"><label><input id="backup-encrypt" type="checkbox" checked> Chiffrer le fichier avec un mot de passe</label></p>
+      <p><label for="backup-password">Mot de passe de la sauvegarde</label><br>
+        <input id="backup-password" type="password" autocomplete="off" minlength="12" required class="backup-style-1"></p>
+      <p>Export chiffré : 12 caractères minimum. Sans ce mot de passe, la sauvegarde sera irrécupérable. APA ne le conserve pas.</p>
+      <p>Décochez l'option pour exporter en clair. Le stockage local du navigateur n'est pas chiffré par cette option. L'export contient les alias, pas la fiche pseudonyme.</p>
+      <p id="backup-error" role="alert" class="backup-style-2"></p>
+      <div class="section-actions"><button id="backup-cancel" class="secondary-button" type="button">Annuler</button><button id="backup-submit" class="primary-button" type="submit">Exporter</button></div>
+    </form>
+  </dialog>
 </body>
 </html>
