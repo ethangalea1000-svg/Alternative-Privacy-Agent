@@ -1,3 +1,4 @@
+import { isEncryptedBackup, encryptBackup, decryptBackup } from "./crypto-backup.js";
 import { STORAGE_KEY, parseStoredAliases, parseBackup, serializeAliases, mergeImportedAliases, updateAlias, validateAlias } from "./prototype-store.js";
 import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdentity } from "./identity-store.js";
 
@@ -294,20 +295,94 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
       "Checklist de confidentialité mise à jour localement."));
   }
   document.querySelector("#open-create").addEventListener("click", () => openDialog());
-  elements.exportButton.addEventListener("click", () => {
+  const backupDialog = document.querySelector("#backup-dialog");
+  const backupForm = document.querySelector("#backup-password-form");
+  const backupPassword = document.querySelector("#backup-password");
+  const backupChoice = document.querySelector("#backup-encrypt");
+  const backupError = document.querySelector("#backup-error");
+  const backupSubmit = document.querySelector("#backup-submit");
+  let backupMode = "export", pendingBackupText = "", backupBusy = false;
+
+  function closeBackupDialog() {
+    if (backupBusy) return;
+    backupPassword.value = "";
+    pendingBackupText = "";
+    elements.backupFile.value = "";
+    backupDialog.close();
+  }
+  function openBackupDialog(mode, text = "") {
+    backupMode = mode;
+    pendingBackupText = text;
+    backupPassword.value = "";
+    backupError.textContent = "";
+    backupChoice.checked = true;
+    document.querySelector("#backup-choice-row").hidden = mode !== "export";
+    document.querySelector("#backup-title").textContent = mode === "export" ? "Exporter une sauvegarde" : "Importer une sauvegarde chiffrée";
+    backupSubmit.textContent = mode === "export" ? "Exporter" : "Déchiffrer et importer";
+    backupPassword.required = true;
+    backupPassword.minLength = mode === "export" ? 12 : 1;
+    backupPassword.disabled = false;
+    backupDialog.showModal();
+    backupPassword.focus();
+  }
+  document.querySelector("#backup-cancel").addEventListener("click", closeBackupDialog);
+  backupDialog.addEventListener("cancel", event => {
+    event.preventDefault();
+    closeBackupDialog();
+  });
+  backupDialog.addEventListener("close", () => {
+    backupPassword.value = "";
+    pendingBackupText = "";
+  });
+  backupChoice.addEventListener("change", () => {
+    backupPassword.required = backupChoice.checked;
+    backupPassword.disabled = !backupChoice.checked;
+    if (!backupChoice.checked) backupPassword.value = "";
+  });
+  function acceptImportedBackup(text) {
+    const imported = parseBackup(text);
+    if (!window.confirm("Importer " + imported.length + " alias ? OK = fusionner (les mêmes identifiants seront mis à jour). Annuler = abandonner.")) return false;
+    const previous = aliases;
+    aliases = mergeImportedAliases(aliases, imported);
+    if (!persistAliases()) { aliases = previous; return false; }
+    render();
+    showToast("Sauvegarde importée localement.");
+    return true;
+  }
+  backupForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (backupBusy) return;
+    backupBusy = true;
+    backupSubmit.disabled = true;
+    backupError.textContent = "";
     try {
-      const blob = new Blob([serializeAliases(aliases)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = element("a");
-      link.href = url;
-      link.download = "apa-sauvegarde-" + new Date().toISOString().slice(0, 10) + ".json";
-      link.click();
-      URL.revokeObjectURL(url);
-      showToast("Sauvegarde JSON exportée. Conservez-la dans un endroit sûr.");
-    } catch {
-      showToast("Impossible de créer la sauvegarde JSON.");
+      if (backupMode === "export") {
+        const encrypted = backupChoice.checked;
+        const content = encrypted ? await encryptBackup(serializeAliases(aliases), backupPassword.value) : serializeAliases(aliases);
+        // La limite doit aussi permettre le réimport du même fichier.
+        if (new Blob([content]).size > 2 * 1024 * 1024) throw new Error("Sauvegarde trop volumineuse : limite de 2 Mo.");
+        const blob = new Blob([content], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = element("a");
+        link.href = url;
+        link.download = "apa-sauvegarde-" + new Date().toISOString().slice(0, 10) + (encrypted ? ".chiffre.json" : ".json");
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast(encrypted ? "Sauvegarde chiffrée exportée. Gardez le mot de passe à part." : "Sauvegarde exportée en clair : gardez le fichier privé.");
+      } else {
+        const plaintext = await decryptBackup(pendingBackupText, backupPassword.value);
+        if (!acceptImportedBackup(plaintext)) return;
+      }
+      backupBusy = false;
+      closeBackupDialog();
+    } catch (error) {
+      backupError.textContent = error instanceof Error ? error.message : "Impossible de traiter la sauvegarde.";
+    } finally {
+      backupBusy = false;
+      backupSubmit.disabled = false;
     }
   });
+  elements.exportButton.addEventListener("click", () => openBackupDialog("export"));
   elements.importButton.addEventListener("click", () => elements.backupFile.click());
   elements.backupFile.addEventListener("change", async () => {
     const file = elements.backupFile.files?.[0];
@@ -318,13 +393,9 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
       return;
     }
     try {
-      const imported = parseBackup(await file.text());
-      const replace = window.confirm("Importer " + imported.length + " alias ? OK = fusionner (les mêmes identifiants seront mis à jour). Annuler = abandonner.");
-      if (!replace) return;
-      const previous = aliases;
-      aliases = mergeImportedAliases(aliases, imported);
-      if (!persistAliases()) aliases = previous;
-      else { render(); showToast("Sauvegarde importée localement."); }
+      const text = await file.text();
+      if (isEncryptedBackup(text)) openBackupDialog("import", text);
+      else acceptImportedBackup(text);
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Fichier de sauvegarde invalide.");
     } finally {
