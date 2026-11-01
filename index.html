@@ -138,11 +138,16 @@
       <p id="backup-choice-row"><label><input id="backup-encrypt" type="checkbox" checked> Chiffrer le fichier avec un mot de passe</label></p>
       <p><label for="backup-password">Mot de passe de la sauvegarde</label><br>
         <input id="backup-password" type="password" autocomplete="off" minlength="12" required class="backup-style-1"></p>
-      <p>Export chiffré : 12 caractères minimum. Sans ce mot de passe, la sauvegarde sera irrécupérable. APA ne le conserve pas.</p>
-      <p>Décochez l'option pour exporter en clair. Le stockage local du navigateur n'est pas chiffré par cette option. L'export contient les alias, pas la fiche pseudonyme.</p>
+      <p id="backup-warning">Export chiffré : 12 caractères minimum. Sans ce mot de passe, la sauvegarde sera irrécupérable. APA ne le conserve pas.</p>
+      <p id="backup-scope">Décochez l'option pour exporter en clair. Le stockage local du navigateur n'est pas chiffré par cette option. L'export contient les alias, pas la fiche pseudonyme.</p>
       <p id="backup-error" role="alert" class="backup-style-2"></p>
       <div class="section-actions"><button id="backup-cancel" class="secondary-button" type="button">Annuler</button><button id="backup-submit" class="primary-button" type="submit">Exporter</button></div>
     </form>
+  </dialog>
+  <dialog id="backup-merge-dialog" class="backup-style-0" aria-labelledby="backup-merge-title">
+    <h2 id="backup-merge-title">Confirmer l'import</h2>
+    <p id="backup-merge-description"></p>
+    <div class="section-actions"><button id="backup-merge-cancel" class="secondary-button" type="button">Annuler</button><button id="backup-merge-accept" class="primary-button" type="button">Fusionner les alias</button></div>
   </dialog>
 </body>
 </html>
