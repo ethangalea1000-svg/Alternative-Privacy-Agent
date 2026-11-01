@@ -40,7 +40,7 @@ export function isEncryptedBackup(text) {
 }
 
 export async function encryptBackup(plaintext, password) {
-  if (typeof password !== "string" || password.length < 12) throw new Error("Utilisez au moins 12 caracteres pour le mot de passe.");
+  if (typeof password !== "string" || password.length < 12) throw new Error("Utilisez au moins 12 caractères pour le mot de passe.");
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(password, salt, PBKDF2_ITERATIONS);
@@ -60,7 +60,7 @@ export async function decryptBackup(containerText, password) {
   if (!container || container.format !== FORMAT || container.version !== 1 ||
       container.kdf?.name !== "PBKDF2" || container.kdf?.hash !== "SHA-256" ||
       container.kdf?.iterations !== PBKDF2_ITERATIONS || container.cipher?.name !== "AES-GCM") {
-    throw new Error("Format de sauvegarde chiffre non pris en charge.");
+    throw new Error("Format de sauvegarde chiffré non pris en charge.");
   }
   if (typeof container.kdf.salt !== "string" || typeof container.cipher.iv !== "string" ||
       typeof container.data !== "string") throw new Error("Sauvegarde invalide.");
@@ -77,6 +77,6 @@ export async function decryptBackup(containerText, password) {
     const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
     return new TextDecoder().decode(plaintext);
   } catch {
-    throw new Error("Mot de passe incorrect ou sauvegarde alteree.");
+    throw new Error("Mot de passe incorrect ou sauvegarde altérée.");
   }
 }
