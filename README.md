@@ -13,7 +13,7 @@ APA est un **tableau de bord privé pour organiser les alias numériques que vou
 
 ## Confidentialité et sauvegardes
 
-Le prototype enregistre les alias et la fiche pseudonyme dans le stockage local du navigateur sur cet appareil et ce profil de navigateur. Les champs de la fiche sont vides par défaut et aucun attribut n’est généré. Il ne synchronise pas les appareils. La suppression des données du navigateur peut effacer ces entrées. L'export JSON est une sauvegarde non chiffrée : gardez le fichier dans un emplacement sûr et ne le partagez pas s'il contient des informations privées. N'enregistrez jamais de mots de passe ou de données sensibles dans les notes.
+Le prototype enregistre les alias et la fiche pseudonyme dans le stockage local du navigateur sur cet appareil et ce profil de navigateur. Les champs de la fiche sont vides par défaut et aucun attribut n’est généré. Il ne synchronise pas les appareils. La suppression des données du navigateur peut effacer ces entrées. L'export des alias peut être chiffré avec un mot de passe (12 caractères minimum), ou rester en JSON clair. Le mot de passe n'est pas conservé et ne peut pas être récupéré. La fiche pseudonyme n'est pas incluse dans cet export et localStorage reste en clair : gardez le fichier dans un emplacement sûr et ne le partagez pas s'il contient des informations privées. N'enregistrez jamais de mots de passe ou de données sensibles dans les notes.
 
 ## Versions
 
