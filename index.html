@@ -138,6 +138,8 @@
       <p id="backup-choice-row"><label><input id="backup-encrypt" type="checkbox" checked> Chiffrer le fichier avec un mot de passe</label></p>
       <p><label for="backup-password">Mot de passe de la sauvegarde</label><br>
         <input id="backup-password" type="password" autocomplete="off" minlength="12" required class="backup-style-1"></p>
+      <p id="backup-confirm-row"><label for="backup-password-confirm">Confirmer le mot de passe</label><br>
+        <input id="backup-password-confirm" type="password" autocomplete="off" class="backup-style-1"></p>
       <p id="backup-warning">Export chiffré : 12 caractères minimum. Sans ce mot de passe, la sauvegarde sera irrécupérable. APA ne le conserve pas.</p>
       <p id="backup-scope">Décochez l'option pour exporter en clair. Le stockage local du navigateur n'est pas chiffré par cette option. L'export contient les alias, pas la fiche pseudonyme.</p>
       <p id="backup-error" role="alert" class="backup-style-2"></p>
@@ -151,3 +153,4 @@
   </dialog>
 </body>
 </html>
+
