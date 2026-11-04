@@ -23,3 +23,8 @@
 
 /* Keep the grouped product-scope note readable when it contains a heading and text. */
 .notice>div{min-width:0}.notice>div>p{margin:4px 0 0}
+
+
+
+/* Suggestion de pseudonyme dans la fenêtre alias */
+.suggest-button{margin-top:8px}
