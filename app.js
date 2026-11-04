@@ -326,6 +326,8 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     backupPassword.required = true;
     backupPassword.minLength = mode === "export" ? 12 : 1;
     backupPassword.disabled = false;
+    document.querySelector("#backup-password-confirm").value = "";
+    document.querySelector("#backup-confirm-row").hidden = mode !== "export";
     backupDialog.showModal();
     backupPassword.focus();
   }
@@ -336,11 +338,15 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
   });
   backupDialog.addEventListener("close", () => {
     backupPassword.value = "";
+    document.querySelector("#backup-password-confirm").value = "";
     pendingBackupText = "";
   });
   backupChoice.addEventListener("change", () => {
     backupPassword.required = backupChoice.checked;
     backupPassword.disabled = !backupChoice.checked;
+    const cRow = document.querySelector("#backup-confirm-row");
+    cRow.hidden = backupMode !== "export" || !backupChoice.checked;
+    document.querySelector("#backup-password-confirm").value = backupChoice.checked ? document.querySelector("#backup-password-confirm").value : "";
     if (!backupChoice.checked) backupPassword.value = "";
   });
   async function confirmBackupMerge(count) {
@@ -382,6 +388,8 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     try {
       if (backupMode === "export") {
         const encrypted = backupChoice.checked;
+        const confirmInput = document.querySelector("#backup-password-confirm");
+        if (encrypted && confirmInput.value !== backupPassword.value) throw new Error("Les deux mots de passe sont différents. Aucun fichier n'a été exporté.");
         const content = encrypted ? await encryptBackup(serializeAliases(aliases), backupPassword.value) : serializeAliases(aliases);
         // La limite doit aussi permettre le réimport du même fichier.
         if (new Blob([content]).size > 2 * 1024 * 1024) throw new Error("Sauvegarde trop volumineuse : limite de 2 Mo.");
@@ -490,3 +498,4 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
   displayIdentity();
   render();
 })();
+
