@@ -45,7 +45,9 @@ export function serializeAliases(aliases) {
 }
 
 export function parseBackup(text) {
-  const parsed = JSON.parse(text);
+  let parsed;
+  try { parsed = JSON.parse(text); }
+  catch { throw new SyntaxError("Ce fichier n'est pas une sauvegarde JSON valide."); }
   if (Array.isArray(parsed)) {
     const aliases = parsed.filter(validateAlias).map(normalizeAlias);
     if (aliases.length !== parsed.length) throw new TypeError("La sauvegarde contient des entrées invalides.");
@@ -72,3 +74,4 @@ export function updateAlias(aliases, id, changes) {
   if (!validateAlias(next)) throw new TypeError("Les informations saisies sont invalides.");
   return aliases.map((item, i) => i === index ? next : item);
 }
+
