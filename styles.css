@@ -24,6 +24,11 @@
 /* Keep the grouped product-scope note readable when it contains a heading and text. */
 .notice>div{min-width:0}.notice>div>p{margin:4px 0 0}
 
+/* Optional encrypted backup dialog */
+.backup-style-0{max-width: min(460px, calc(100vw - 32px)); padding: 24px; color: #eef5fb; background: #111e2e; border: 1px solid #26384d; border-radius: 16px;}
+.backup-style-1{width:100%;box-sizing:border-box;margin-top:8px;}
+.backup-style-2{color:#ffb4b4;}
+#backup-dialog::backdrop{background:rgba(0,0,0,.6)}
 
 
 /* Suggestion de pseudonyme dans la fenêtre alias */
