@@ -29,3 +29,7 @@
 .backup-style-1{width:100%;box-sizing:border-box;margin-top:8px;}
 .backup-style-2{color:#ffb4b4;}
 #backup-dialog::backdrop{background:rgba(0,0,0,.6)}
+
+
+/* Suggestion de pseudonyme dans la fenêtre alias */
+.suggest-button{margin-top:8px}

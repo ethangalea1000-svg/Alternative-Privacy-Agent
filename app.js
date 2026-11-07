@@ -50,6 +50,7 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
     dialog: document.querySelector("#alias-dialog"),
     form: document.querySelector("#alias-form"),
     name: document.querySelector("#alias-name"),
+    suggestName: document.querySelector("#suggest-alias-name"),
     category: document.querySelector("#alias-category"),
     status: document.querySelector("#alias-status"),
     site: document.querySelector("#alias-site"),
@@ -235,6 +236,25 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
 
   let editingId = null;
 
+  const pseudonymSyllables = ["ba", "be", "bi", "bo", "bu", "ka", "ke", "ki", "ko", "ku", "la", "le", "li", "lo", "lu", "ma", "me", "mi", "mo", "mu", "na", "ne", "ni", "no", "nu", "ra", "re", "ri", "ro", "ru", "sa", "se", "si", "so", "su", "ta", "te", "ti", "to", "tu", "va", "ve", "vi", "vo", "vu", "za", "ze", "zi", "zo", "zu"];
+  function randomIndex(max) {
+    if (globalThis.crypto && typeof globalThis.crypto.getRandomValues === "function") {
+      const buffer = new Uint32Array(1);
+      globalThis.crypto.getRandomValues(buffer);
+      return buffer[0] % max;
+    }
+    return Math.floor(Math.random() * max);
+  }
+  function suggestPseudonym() {
+    const syllableCount = 3 + randomIndex(2);
+    let pseudonym = "";
+    for (let index = 0; index < syllableCount; index++) {
+      pseudonym += pseudonymSyllables[randomIndex(pseudonymSyllables.length)];
+    }
+    pseudonym = pseudonym.charAt(0).toUpperCase() + pseudonym.slice(1);
+    return pseudonym + "-" + (100 + randomIndex(900));
+  }
+
   function openDialog(item = null) {
     editingId = item?.id || null;
     elements.error.hidden = true;
@@ -289,6 +309,11 @@ import { IDENTITY_STORAGE_KEY, emptyIdentity, parseStoredIdentity, validateIdent
   }
 
   identityElements.form.addEventListener("submit", (event) => { event.preventDefault(); persistIdentity(readIdentityForm()); });
+  elements.suggestName?.addEventListener("click", () => {
+    elements.name.value = suggestPseudonym();
+    elements.name.focus();
+    showToast("Pseudonyme suggéré. Vous pouvez le modifier avant d’enregistrer.");
+  });
   for (const input of identityElements.checklist) {
     input.addEventListener("change", () => persistIdentity(
       { ...identity, checklist: { ...identity.checklist, [input.dataset.identityCheck]: input.checked } },
