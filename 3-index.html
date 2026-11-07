@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101c2c">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'self'">
+  <title>APA — Alternative Privacy Agent</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Aller au contenu</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Navigation principale">
+      <a class="brand" href="./" aria-label="APA, accueil">
+        <span class="brand-mark" aria-hidden="true">A<span>.</span></span>
+        <span class="brand-copy"><strong>APA</strong><small>Alternative Privacy Agent</small></span>
+      </a>
+      <div class="workspace-label">ESPACE PERSONNEL</div>
+      <nav class="nav-list">
+        <a class="nav-link is-active" href="#overview" aria-current="page"><span class="nav-icon" aria-hidden="true"><svg class="icon-svg" data-icon="dashboard" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z"/></svg></span> Tableau de bord</a>
+        <a class="nav-link" href="#aliases"><span class="nav-icon" aria-hidden="true"><svg class="icon-svg" data-icon="aliases" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16 M4 12h16 M4 17h16"/></svg></span> Mes alias <span class="nav-count" id="nav-count">0</span></a>
+        <a class="nav-link" href="#identity"><span class="nav-icon" aria-hidden="true"><svg class="icon-svg" data-icon="identity" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M4 21a8 8 0 0 1 16 0"/></svg></span> Mon pseudonyme</a>
+        <a class="nav-link" href="#privacy"><span class="nav-icon" aria-hidden="true"><svg class="icon-svg" data-icon="privacy" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 20 6v5c0 5-3.4 8.2-8 10-4.6-1.8-8-5-8-10V6z M9 12l2 2 4-4"/></svg></span> Confidentialité</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="privacy-mini"><span class="privacy-dot"></span><div><strong>Stockage local</strong><small>Vos données restent ici</small></div></div>
+        <p class="sidebar-version">Prototype · 0.3.0</p>
+      </div>
+    </aside>
+
+    <main id="main" class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb">Espace personnel <span>/</span> Tableau de bord</div>
+        <div class="topbar-status"><span class="status-dot"></span> Mode local</div>
+      </header>
+
+      <section id="overview" class="welcome-section">
+        <div>
+          <p class="eyebrow">VOTRE ESPACE PERSONNEL</p>
+          <h1>Vos alias,<br><span>classés ici, sur votre appareil.</span></h1>
+          <p class="welcome-copy">Retrouvez au même endroit les alias que vous utilisez sur différents sites, sans créer de compte ni synchroniser vos données.</p>
+        </div>
+        <div class="hero-orbit" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit-core">A<span>.</span></div><i class="orbit-node node-one"></i><i class="orbit-node node-two"></i><i class="orbit-node node-three"></i></div>
+      </section>
+
+      <section class="notice" aria-labelledby="apa-scope-title">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <div><strong id="apa-scope-title">Ce qu’APA fait et ne fait pas</strong><p>APA vous aide à classer les alias déjà créés sur d’autres sites. Les noms enregistrés ici servent au classement : ce ne sont pas des adresses e-mail fonctionnelles. APA ne crée pas d’adresse e-mail et ne relaie pas de messages.</p></div>
+      </section>
+
+      <section class="stats-grid" aria-label="Résumé">
+        <article class="stat-card"><div class="stat-heading"><span>Total des alias</span><span class="stat-icon"><svg class="icon-svg" data-icon="aliases" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16 M4 12h16 M4 17h16"/></svg></span></div><strong class="stat-number" id="stat-total">0</strong><p>Alias enregistrés</p></article>
+        <article class="stat-card"><div class="stat-heading"><span>Actifs</span><span class="stat-icon icon-green">✓</span></div><strong class="stat-number" id="stat-active">0</strong><p>Alias suivis comme actifs</p></article>
+        <article class="stat-card"><div class="stat-heading"><span>En pause</span><span class="stat-icon icon-amber"><svg class="icon-svg" data-icon="pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5v14 M16 5v14"/></svg></span></div><strong class="stat-number" id="stat-paused">0</strong><p>À vérifier si nécessaire</p></article>
+        <article class="stat-card"><div class="stat-heading"><span>À configurer</span><span class="stat-icon icon-purple"><svg class="icon-svg" data-icon="settings" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 3.1-.2-.1a1.7 1.7 0 0 0-1.8.1l-.2.1h-3.6l-.1-.2a1.7 1.7 0 0 0-1.5-1l-.3 0-3.1-1.8.1-.2a1.7 1.7 0 0 0-.1-1.8l-.1-.2v-3.6l.2-.1a1.7 1.7 0 0 0 1-1.5l0-.3 1.8-3.1.2.1a1.7 1.7 0 0 0 1.8-.1l.2-.1h3.6l.1.2a1.7 1.7 0 0 0 1.5 1l.3 0 3.1 1.8-.1.2a1.7 1.7 0 0 0 .1 1.8l.1.2v3.6z"/></svg></span></div><strong class="stat-number" id="stat-planned">0</strong><p>Pas encore configurés</p></article>
+      </section>
+
+      <section id="aliases" class="aliases-section">
+        <div class="section-heading">
+          <div><p class="eyebrow">VOTRE LISTE</p><h2>Mes alias</h2><p class="section-copy">Consultez et mettez à jour les alias utilisés sur vos différents sites.</p></div>
+          <div class="section-actions"><button class="secondary-button" id="export-backup" type="button">Exporter JSON</button><button class="secondary-button" id="import-backup" type="button">Importer JSON</button><input id="backup-file" type="file" accept="application/json,.json" hidden><button class="primary-button" id="open-create" type="button"><svg class="icon-svg" data-icon="plus" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14 M5 12h14"/></svg> Ajouter un alias</button></div>
+        </div>
+        <div class="toolbar">
+          <label class="search-box"><span aria-hidden="true"><svg class="icon-svg" data-icon="search" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16 M21 21l-4.3-4.3"/></svg></span><span class="sr-only">Rechercher un alias</span><input id="search" type="search" placeholder="Rechercher un alias…" autocomplete="off"></label>
+          <label class="filter-wrap"><span class="sr-only">Filtrer par catégorie</span><select id="category-filter"><option value="all">Toutes les catégories</option><option value="achats">Achats</option><option value="projets">Projets</option><option value="public">Public</option><option value="personnel">Personnel</option></select></label>
+          <label class="filter-wrap"><span class="sr-only">Filtrer par statut</span><select id="status-filter"><option value="all">Tous les statuts</option><option value="planned">À configurer</option><option value="active">Actifs</option><option value="paused">En pause</option></select></label>
+        </div>
+        <div id="alias-list" class="alias-list" aria-live="polite"></div>
+        <div id="empty-state" class="empty-state">
+          <div class="empty-illustration" aria-hidden="true"><svg class="icon-svg" data-icon="aliases" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16 M4 12h16 M4 17h16"/></svg></div>
+          <h3>Aucun alias pour le moment</h3>
+          <p>Ajoutez votre premier alias pour commencer.</p>
+          <button class="secondary-button" id="empty-create" type="button">Ajouter mon premier alias</button>
+        </div>
+      </section>
+
+      <section id="identity" class="identity-section">
+        <div class="section-heading"><div><p class="eyebrow">PROFIL PUBLIC</p><h2>Mon pseudonyme</h2><p class="section-copy">Choisissez un pseudonyme et une bio simple. Évitez les détails qui pourraient vous identifier et gardez vos espaces personnels et publics séparés.</p></div></div>
+        <div class="identity-layout">
+          <form id="identity-form" class="identity-card">
+            <label class="field-label" for="identity-pseudonym">Pseudonyme <span>Facultatif</span></label>
+            <input class="text-field" id="identity-pseudonym" name="pseudonym" maxlength="40" autocomplete="off" placeholder="Le pseudonyme que vous choisissez">
+            <label class="field-label" for="identity-bio">Bio courte <span>Facultatif · 240 caractères</span></label>
+            <textarea class="text-field" id="identity-bio" name="bio" maxlength="240" rows="3" placeholder="Décrivez vos centres d’intérêt sans révéler d’informations permettant de vous identifier ou de vous localiser."></textarea>
+            <label class="field-label" for="identity-github">Lien GitHub <span>Facultatif</span></label>
+            <input class="text-field" id="identity-github" name="github" type="url" maxlength="200" autocomplete="url" placeholder="https://github.com/votre-pseudo">
+            <label class="field-label" for="identity-website">Lien vers votre site <span>Facultatif</span></label>
+            <input class="text-field" id="identity-website" name="website" type="url" maxlength="200" autocomplete="url" placeholder="https://votre-site.example">
+            <p class="field-hint">Tous les champs sont vides au départ : rien n’est prérempli ni généré. Enregistrement dans localStorage uniquement, sans compte ni synchronisation.</p>
+            <p class="form-error" id="identity-error" role="alert" hidden></p>
+            <button class="primary-button" type="submit">Enregistrer ma fiche</button>
+            <div class="identity-links" aria-live="polite"><a id="identity-github-link" href="#" hidden>Ouvrir mon GitHub</a><a id="identity-website-link" href="#" hidden>Ouvrir mon site</a></div>
+          </form>
+          <aside class="identity-card identity-checklist">
+            <p class="eyebrow">REPÈRES DE CONFIDENTIALITÉ</p><h3>Avant de publier</h3>
+            <label class="check-row"><input type="checkbox" data-identity-check="separate-real-name"><span>N’associez pas publiquement ce pseudonyme à votre vrai nom.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="not-personal-accounts"><span>Ne réutilisez pas ce pseudonyme sur vos comptes personnels.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="no-identifying-details"><span>Ne publiez pas de détails personnels précis : établissement ou lieu fréquenté, ville ou âge exact.</span></label>
+            <label class="check-row"><input type="checkbox" data-identity-check="review-links"><span>Vérifiez que vos liens publics ne révèlent pas d’informations privées.</span></label>
+            <p class="field-hint">Cette checklist aide à repérer certains risques, mais ne garantit pas l’anonymat. Un profil public peut être rapproché d’autres informations.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="privacy" class="privacy-section">
+        <div class="privacy-section-icon" aria-hidden="true"><svg class="icon-svg" data-icon="privacy" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 20 6v5c0 5-3.4 8.2-8 10-4.6-1.8-8-5-8-10V6z M9 12l2 2 4-4"/></svg></div>
+        <div><h2>Vos données restent dans ce navigateur</h2><p>APA enregistre vos alias et votre fiche dans le stockage local de ce navigateur. Rien n’est envoyé à un serveur ni synchronisé entre appareils. Si vous effacez les données du navigateur, vos informations locales peuvent être supprimées définitivement.</p></div>
+      </section>
+      <footer class="page-footer"><span>APA · Prototype 0.3.0</span><span>Vos alias, classés ici, sur votre appareil.</span></footer>
+    </main>
+  </div>
+
+  <dialog id="alias-dialog" class="alias-dialog" aria-labelledby="dialog-title">
+    <form id="alias-form">
+      <div class="dialog-heading"><div><p class="eyebrow">NOUVEL ALIAS</p><h2 id="dialog-title">Ajouter un alias</h2></div><button class="close-button" id="close-dialog" type="button" aria-label="Fermer"><svg class="icon-svg" data-icon="close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18 M6 6l12 12"/></svg></button></div>
+      <p class="dialog-copy">Enregistrez ici un alias que vous utilisez déjà sur un site.</p>
+      <label class="field-label" for="alias-name">Nom de l’alias <span>Obligatoire</span></label>
+      <input class="text-field" id="alias-name" name="alias-name" maxlength="48" placeholder="Ex. Boutique de livres" required>
+      <button class="secondary-button suggest-button" id="suggest-alias-name" type="button">Suggérer un pseudonyme</button>
+      <label class="field-label" for="alias-category">Catégorie</label>
+      <select class="text-field" id="alias-category" name="alias-category"><option value="achats">Achats</option><option value="projets">Projets</option><option value="public">Public</option><option value="personnel">Personnel</option></select>
+      <label class="field-label" for="alias-site">Où est-il utilisé ? <span>Facultatif</span></label>
+      <input class="text-field" id="alias-site" name="alias-site" maxlength="120" placeholder="Ex. Boutique, réseau social, service">
+      <label class="field-label" for="alias-notes">Notes <span>Facultatif</span></label>
+      <textarea class="text-field" id="alias-notes" name="alias-notes" maxlength="1000" rows="3" placeholder="Ex. Usage, date de création, raison du choix"></textarea>
+      <label class="field-label" for="alias-status">Statut</label>
+      <select class="text-field" id="alias-status" name="alias-status"><option value="planned">À configurer</option><option value="active">Actif</option><option value="paused">En pause</option></select>
+      <p class="field-hint">Ne stockez pas de mot de passe ni de données sensibles dans vos notes.</p>
+      <div class="dialog-actions"><button class="secondary-button" id="cancel-create" type="button">Annuler</button><button class="primary-button" id="save-alias" type="submit">Enregistrer</button></div>
+      <p class="form-error" id="form-error" role="alert" hidden></p>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="backup-dialog" aria-labelledby="backup-title" class="backup-style-0">
+    <form id="backup-password-form">
+      <h2 id="backup-title">Exporter une sauvegarde</h2>
+      <p id="backup-choice-row"><label><input id="backup-encrypt" type="checkbox" checked> Chiffrer le fichier avec un mot de passe</label></p>
+      <p><label for="backup-password">Mot de passe de la sauvegarde</label><br>
+        <input id="backup-password" type="password" autocomplete="off" minlength="12" required class="backup-style-1"></p>
+      <p id="backup-confirm-row"><label for="backup-password-confirm">Confirmer le mot de passe</label><br>
+        <input id="backup-password-confirm" type="password" autocomplete="off" class="backup-style-1"></p>
+      <p id="backup-warning">Export chiffré : 12 caractères minimum. Sans ce mot de passe, la sauvegarde sera irrécupérable. APA ne le conserve pas.</p>
+      <p id="backup-scope">Décochez l'option pour exporter en clair. Le stockage local du navigateur n'est pas chiffré par cette option. L'export contient les alias, pas la fiche pseudonyme.</p>
+      <p id="backup-error" role="alert" class="backup-style-2"></p>
+      <div class="section-actions"><button id="backup-cancel" class="secondary-button" type="button">Annuler</button><button id="backup-submit" class="primary-button" type="submit">Exporter</button></div>
+    </form>
+  </dialog>
+  <dialog id="backup-merge-dialog" class="backup-style-0" aria-labelledby="backup-merge-title">
+    <h2 id="backup-merge-title">Confirmer l'import</h2>
+    <p id="backup-merge-description"></p>
+    <div class="section-actions"><button id="backup-merge-cancel" class="secondary-button" type="button">Annuler</button><button id="backup-merge-accept" class="primary-button" type="button">Fusionner les alias</button></div>
+  </dialog>
+</body>
+</html>
+
