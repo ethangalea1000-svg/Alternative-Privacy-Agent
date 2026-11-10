@@ -116,6 +116,9 @@ function fakeDb() {
             return { meta: { changes: before - state.loginLimits.length } };
           }
           if (/^INSERT INTO users/i.test(sql)) {
+            if (/WHERE \(SELECT COUNT\(\*\) FROM users\) < 20/i.test(sql) && state.users.length >= 20) {
+              return { meta: { changes: 0 } };
+            }
             if (state.users.some((item) => item.username.toLowerCase() === String(values[1]).toLowerCase())) {
               throw new Error("UNIQUE constraint failed: users.username");
             }
@@ -680,4 +683,16 @@ test("API middleware handles allowed local CORS preflight and credentials", asyn
   });
   assert.equal(denied.status, 403);
   assert.deepEqual(await denied.json(), { error: "test_origin_not_allowed" });
+});
+
+// All requests pass the cheap count before the async password derivations finish.
+test("registration enforces the test cap at insertion under concurrent requests", async () => {
+  const db = fakeDb();
+  for (let i = 0; i < 19; i++) db.state.users.push({ id: `seed-${i}`, username: `test-seed-${i}` });
+  const responses = await Promise.all(Array.from({ length: 8 }, (_, i) =>
+    register(db, { username: `test-cap-${i}`, password: USER_A.password })));
+  assert.equal(responses.filter((r) => r.status === 201).length, 1);
+  assert.equal(responses.filter((r) => r.status === 429).length, 7);
+  assert.equal(db.state.users.length, 20);
+  assert.equal(db.state.sessions.length, 1);
 });
