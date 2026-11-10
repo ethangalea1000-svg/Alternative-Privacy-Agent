@@ -81,10 +81,13 @@ export async function onRequest(context) {
       return json({ error: "test_alias_limit_reached" }, 429);
     }
 
-    await db.prepare(
-      "INSERT INTO aliases (id, name, label, category, status, created_at, updated_at, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    const inserted = await db.prepare(
+      "INSERT INTO aliases (id, name, label, category, status, created_at, updated_at, owner_id) SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM aliases WHERE owner_id = ?) < 25"
     ).bind(id, validated.value.name, label, validated.value.category, validated.value.status,
-      now, now, user.id).run();
+      now, now, user.id, user.id).run();
+    if (!inserted.meta.changes) {
+      return json({ error: "test_alias_limit_reached" }, 429);
+    }
 
     return json({
       alias: {
