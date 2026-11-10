@@ -148,6 +148,9 @@ function fakeDb() {
             return { meta: { changes: before - state.sessions.length } };
           }
           if (/^INSERT INTO aliases/i.test(sql)) {
+            if (/WHERE \(SELECT COUNT\(\*\) FROM aliases WHERE owner_id = \?\) < 25/i.test(sql) && state.aliases.filter((a) => a.owner_id === values[8]).length >= 25) {
+              return { meta: { changes: 0 } };
+            }
             if (state.aliases.some((item) => item.id === values[0] || item.label === values[2])) {
               throw new Error("UNIQUE constraint failed: aliases.label");
             }
@@ -695,4 +698,18 @@ test("registration enforces the test cap at insertion under concurrent requests"
   assert.equal(responses.filter((r) => r.status === 429).length, 7);
   assert.equal(db.state.users.length, 20);
   assert.equal(db.state.sessions.length, 1);
+});
+
+test("alias insertion enforces the cap per owner under concurrent requests", async () => {
+  const db = fakeDb();
+  const registered = await register(db);
+  const cookie = cookieHeader(registered);
+  const ownerId = db.state.users[0].id;
+  for (let i = 0; i < 24; i++) db.state.aliases.push({ id: `seed-${i}`, label: `seed-${i}`, owner_id: ownerId });
+  for (let i = 0; i < 25; i++) db.state.aliases.push({ id: `other-${i}`, label: `other-${i}`, owner_id: "other-owner" });
+  const responses = await Promise.all(Array.from({ length: 8 }, (_, i) => createAlias(db, cookie, `test-cap-${i}`)));
+  assert.equal(responses.filter((r) => r.status === 201).length, 1);
+  assert.equal(responses.filter((r) => r.status === 429).length, 7);
+  assert.equal(db.state.aliases.filter((a) => a.owner_id === ownerId).length, 25);
+  assert.equal(db.state.aliases.filter((a) => a.owner_id === "other-owner").length, 25);
 });
