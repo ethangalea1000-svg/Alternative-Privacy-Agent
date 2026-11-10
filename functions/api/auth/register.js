@@ -34,10 +34,13 @@ export async function onRequest(context) {
     const createdAt = new Date().toISOString();
     const passwordRecord = await createPasswordRecord(password);
 
-    await db.prepare(
-      "INSERT INTO users (id, username, password_hash, password_salt, password_iterations, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+    const inserted = await db.prepare(
+      "INSERT INTO users (id, username, password_hash, password_salt, password_iterations, created_at) SELECT ?, ?, ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM users) < 20"
     ).bind(id, username, passwordRecord.password_hash, passwordRecord.password_salt,
       passwordRecord.password_iterations, createdAt).run();
+    if (!inserted.meta.changes) {
+      return json({ error: "test_user_limit_reached" }, 429);
+    }
 
     const user = { id, username, created_at: createdAt };
     const session = await createSession(db, id);
