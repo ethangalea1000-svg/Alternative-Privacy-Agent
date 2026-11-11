@@ -39,7 +39,17 @@ function context(req, db = fakeDb(), params = {}) {
 
 function fakeDb() {
   const state = { users: [], sessions: [], aliases: [], loginLimits: [], lastSql: "", lastValues: [] };
+  let batchQueue = Promise.resolve();
   return {
+    batch(statements) {
+      const result = batchQueue.then(async () => {
+        const results = [];
+        for (const statement of statements) results.push(await statement.run());
+        return results;
+      });
+      batchQueue = result.catch(() => {});
+      return result;
+    },
     state,
     prepare(sql) {
       state.lastSql = sql;
@@ -47,7 +57,7 @@ function fakeDb() {
         values: [],
         bind(...values) { this.values = values; state.lastValues = values; return this; },
         async first() {
-          const values = state.lastValues;
+          const values = this.values;
           if (/SELECT 1 AS ok/i.test(sql)) return { ok: 1 };
           if (/SELECT COUNT\(\*\) AS count FROM users/i.test(sql)) return { count: state.users.length };
           if (/SELECT COUNT\(\*\) AS count FROM aliases WHERE owner_id = \?/i.test(sql)) {
@@ -73,7 +83,7 @@ function fakeDb() {
         },
         async all() {
           if (/FROM aliases WHERE/i.test(sql)) {
-            const values = state.lastValues;
+            const values = this.values;
             let rows = state.aliases.filter((item) => item.owner_id === values[0]);
             if (/category = \?/i.test(sql)) rows = rows.filter((item) => item.category === values[1]);
             if (/status = \?/i.test(sql)) {
@@ -86,7 +96,7 @@ function fakeDb() {
           return { results: [] };
         },
         async run() {
-          const values = state.lastValues;
+          const values = this.values;
           if (/^INSERT INTO auth_login_limits/i.test(sql)) {
             const [key_hash, now, updated_at, windowCutoff, windowCutoff2, windowCutoff3, maxFailures, blockedUntil] = values;
             let row = state.loginLimits.find((item) => item.key_hash === key_hash);
@@ -712,4 +722,16 @@ test("alias insertion enforces the cap per owner under concurrent requests", asy
   assert.equal(responses.filter((r) => r.status === 429).length, 7);
   assert.equal(db.state.aliases.filter((a) => a.owner_id === ownerId).length, 25);
   assert.equal(db.state.aliases.filter((a) => a.owner_id === "other-owner").length, 25);
+});
+
+test("concurrent successful logins leave only the latest session", async () => {
+  const db = fakeDb();
+  await register(db);
+  const responses = await Promise.all(Array.from({ length: 8 }, () => login(db)));
+  assert.ok(responses.every((r) => r.status === 200));
+  assert.equal(db.state.sessions.length, 1);
+  const lookups = await Promise.all(responses.map((r) =>
+    meHandler(context(request("/api/auth/me", { cookie: cookieHeader(r) }), db))));
+  assert.equal(lookups.filter((r) => r.status === 200).length, 1);
+  assert.equal(lookups.filter((r) => r.status === 401).length, 7);
 });
