@@ -107,10 +107,12 @@ export async function createSession(db, userId) {
   const createdAt = new Date(now).toISOString();
 
   // A login rotates sessions for this user, invalidating previously issued tokens.
-  await db.prepare("DELETE FROM sessions WHERE user_id = ?").bind(userId).run();
-  await db.prepare(
-    "INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
-  ).bind(tokenHash, userId, expiresAt, createdAt).run();
+  await db.batch([
+    db.prepare("DELETE FROM sessions WHERE user_id = ?").bind(userId),
+    db.prepare(
+      "INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+    ).bind(tokenHash, userId, expiresAt, createdAt)
+  ]);
 
   return { cookie: sessionCookie(token), expiresAt };
 }
